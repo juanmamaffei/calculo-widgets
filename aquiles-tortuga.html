@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aquiles y la tortuga</title>
+<style>
+  :root { --curso:#005b7f; --verde:#16BC59; --tinta:#0b1f2a; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+         background:var(--tinta); color:#eaf6ff; padding:18px; }
+  .wrap { max-width:680px; margin:0 auto; }
+  .pill { display:inline-block; background:rgba(22,188,89,.15); color:var(--verde);
+          padding:.15em .6em; border-radius:999px; font-size:.8rem; font-weight:600; }
+  h1 { font-size:1.25rem; margin:.4em 0 .2em; }
+  .sub { color:#9fc4d6; font-size:.9rem; margin:0 0 14px; }
+  canvas { width:100%; height:auto; background:#0e2733; border-radius:10px; display:block; }
+  .row { display:flex; justify-content:space-between; gap:10px; margin:12px 0 4px; flex-wrap:wrap; font-size:.9rem; color:#bfe3ff; }
+  input[type=range] { width:100%; accent-color:var(--verde); height:28px; }
+  .stats { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+  .stat { background:#13303f; border-radius:8px; padding:8px 12px; flex:1; min-width:120px; }
+  .stat b { display:block; font-size:1.3rem; color:var(--verde); font-variant-numeric:tabular-nums; }
+  .stat span { font-size:.78rem; color:#9fc4d6; }
+  .msg { background:#13303f; border-left:4px solid var(--verde); padding:10px 14px; border-radius:8px; margin-top:14px; }
+  .btn { background:var(--verde); color:#04231a; border:0; border-radius:8px; padding:8px 16px; font-weight:700; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="pill">interactivo</span>
+  <h1>Aquiles y la tortuga</h1>
+  <p class="sub">Aquiles corre a 10 m/s desde 0. La tortuga, a 1 m/s, arranca 100 m adelante. Zenón dice que Aquiles da infinitos pasos y nunca la alcanza. ¿Tiene razón?</p>
+
+  <canvas id="c" width="660" height="300"></canvas>
+
+  <div class="row"><span>tiempo: <b id="t">0,0</b> s</span><button class="btn" id="play">▶ animar</button></div>
+  <input id="s" type="range" min="0" max="160" value="0" aria-label="tiempo">
+
+  <div class="stats">
+    <div class="stat"><b id="xa">0</b><span>Aquiles (m)</span></div>
+    <div class="stat"><b id="xt">100</b><span>Tortuga (m)</span></div>
+    <div class="stat"><b id="gap">100</b><span>distancia (m)</span></div>
+  </div>
+  <div class="msg" id="msg">Arrastrá el tiempo o tocá ▶. El encuentro ocurre en un instante <b>finito</b>.</div>
+</div>
+
+<script>
+  const VA=10, VT=1, HEAD=100;            // velocidades y ventaja
+  const tMeet = HEAD/(VA-VT);             // 100/9 ≈ 11.11 s
+  const xMeet = VA*tMeet;                 // ≈ 111.1 m
+  const c=document.getElementById('c'), ctx=c.getContext('2d');
+  const s=document.getElementById('s');
+  const fmt=(x,d=1)=>x.toLocaleString('es-AR',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const maxX=140;                          // escala m -> px
+  function px(x){ return 30 + x/maxX*(c.width-60); }
+
+  function draw(t){
+    const xa=VA*t, xt=HEAD+VT*t;
+    ctx.clearRect(0,0,c.width,c.height);
+    // pista
+    ctx.strokeStyle='#26506a'; ctx.lineWidth=1;
+    for(let m=0;m<=140;m+=20){ const X=px(m); ctx.beginPath(); ctx.moveTo(X,40); ctx.lineTo(X,210); ctx.stroke();
+      ctx.fillStyle='#5a8aa6'; ctx.font='11px system-ui'; ctx.fillText(m+'m',X-8,228); }
+    // linea meta (encuentro)
+    ctx.setLineDash([5,4]); ctx.strokeStyle='#16BC5988'; ctx.beginPath(); ctx.moveTo(px(xMeet),30); ctx.lineTo(px(xMeet),215); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='#16BC59'; ctx.font='11px system-ui'; ctx.fillText('encuentro', px(xMeet)-26, 24);
+    // tortuga
+    drawDot(px(Math.min(xt,maxX)),130,'#7fd1a0','🐢');
+    // aquiles
+    drawDot(px(Math.min(xa,maxX)),100,'#ffd166','🏃');
+    // stats
+    document.getElementById('t').textContent=fmt(t);
+    document.getElementById('xa').textContent=fmt(xa);
+    document.getElementById('xt').textContent=fmt(xt);
+    const gap=xt-xa;
+    document.getElementById('gap').textContent=fmt(gap);
+    const m=document.getElementById('msg');
+    if(Math.abs(gap)<0.5||xa>=xt) m.innerHTML='🎯 ¡Lo alcanzó! En <b>t ≈ '+fmt(tMeet,2)+' s</b>, posición <b>'+fmt(xMeet,1)+' m</b>. Los infinitos pasos de Zenón caben en un tiempo finito.';
+    else m.innerHTML='Distancia: <b>'+fmt(gap)+' m</b>. Cada vez menos… los pasos se achican pero suman un tiempo finito.';
+  }
+  function drawDot(x,y,col,emoji){
+    ctx.fillStyle=col; ctx.beginPath(); ctx.arc(x,y,9,0,7); ctx.fill();
+    ctx.font='18px system-ui'; ctx.fillText(emoji,x-10,y-12);
+  }
+  s.addEventListener('input',()=>draw(+s.value/160*25)); // 0..25 s
+  let raf=null;
+  document.getElementById('play').addEventListener('click',()=>{
+    if(raf){cancelAnimationFrame(raf);raf=null;return;}
+    let v=+s.value;
+    (function step(){ v+=0.6; if(v>160){v=160;} s.value=v; draw(v/160*25); if(v<160){raf=requestAnimationFrame(step);} else raf=null; })();
+  });
+  draw(0);
+</script>
+</body>
+</html>

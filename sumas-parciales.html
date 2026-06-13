@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sumas parciales · ½ + ¼ + ⅛ + …</title>
+<style>
+  :root { --curso:#005b7f; --verde:#16BC59; --tinta:#0b1f2a; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+         background:var(--tinta); color:#eaf6ff; padding:18px; }
+  .wrap { max-width:680px; margin:0 auto; }
+  h1 { font-size:1.25rem; margin:0 0 .2em; }
+  .sub { color:#9fc4d6; font-size:.9rem; margin:0 0 18px; }
+  .pill { display:inline-block; background:rgba(22,188,89,.15); color:var(--verde);
+          padding:.15em .6em; border-radius:999px; font-size:.8rem; font-weight:600; }
+  .big { font-size:2.6rem; font-weight:800; color:var(--verde); line-height:1; font-variant-numeric:tabular-nums; }
+  .row { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin:10px 0 4px; flex-wrap:wrap; }
+  input[type=range] { width:100%; accent-color:var(--verde); height:28px; }
+  .track { height:22px; background:#13303f; border-radius:11px; overflow:hidden; position:relative; }
+  .fill { height:100%; background:linear-gradient(90deg,var(--curso),var(--verde)); width:50%; transition:width .25s; }
+  .one { position:absolute; right:0; top:0; bottom:0; border-left:2px dashed #eaf6ff88;
+         font-size:.7rem; padding:2px 4px; color:#eaf6ff99; }
+  .terms { font-family:ui-monospace,Menlo,monospace; font-size:.95rem; color:#bfe3ff; word-break:break-word; margin:14px 0; }
+  .msg { background:#13303f; border-left:4px solid var(--verde); padding:10px 14px; border-radius:8px; margin-top:14px; min-height:1.5em; }
+  .small { color:#9fc4d6; font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="pill">interactivo</span>
+  <h1>¿Cuánto suma ½ + ¼ + ⅛ + …?</h1>
+  <p class="sub">Movés el deslizador y agregás términos. Mirá a qué número se acerca la suma.</p>
+
+  <div class="row">
+    <span class="small">términos sumados: <b id="n">1</b></span>
+    <span class="small">falta para 1: <b id="falta">0,5</b></span>
+  </div>
+  <input id="s" type="range" min="1" max="20" value="1" aria-label="cantidad de términos">
+
+  <div class="row"><span class="small">suma parcial</span></div>
+  <div class="big" id="v">0,5</div>
+
+  <div class="track" style="margin-top:12px"><div class="fill" id="bar"></div><div class="one">1</div></div>
+
+  <div class="terms" id="terms">½ = 0,5</div>
+  <div class="msg" id="msg"></div>
+  <p class="small" style="margin-top:16px">Por más términos que sumes, <b>nunca llegás a pasar 1</b>. La suma <i>converge</i> a 1: ese es el límite. Así se resuelve, con rigor, la paradoja de Zenón.</p>
+</div>
+
+<script>
+  const s = document.getElementById('s');
+  const fmt = x => x.toLocaleString('es-AR',{maximumFractionDigits:7});
+  const fracs = ['½','¼','⅛','1/16','1/32','1/64','1/128'];
+  function upd(){
+    const n = +s.value;
+    let sum = 0;
+    for (let k=1;k<=n;k++) sum += 1/2**k;
+    document.getElementById('n').textContent = n;
+    document.getElementById('v').textContent = fmt(sum);
+    document.getElementById('falta').textContent = fmt(1-sum);
+    document.getElementById('bar').style.width = (sum*100)+'%';
+    const shown = [];
+    for (let k=1;k<=Math.min(n,5);k++) shown.push(fracs[k-1] || '1/'+2**k);
+    document.getElementById('terms').textContent = shown.join(' + ') + (n>5? ' + … ('+n+' términos)':'') + ' = ' + fmt(sum);
+    const m = document.getElementById('msg');
+    if (n>=15) m.innerHTML = '🎯 La suma es <b>'+fmt(sum)+'</b>: prácticamente 1, pero <b>nunca lo alcanza</b> con finitos términos.';
+    else if (n>=5) m.textContent = 'Cada término es la mitad del anterior. La suma se acerca a 1 cada vez más.';
+    else m.textContent = 'Seguí sumando términos…';
+  }
+  s.addEventListener('input', upd);
+  upd();
+</script>
+</body>
+</html>
