@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fourier y el sonido</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;--amar:#ffd166;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:680px;margin:0 auto}
+.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.25rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.9rem;margin:0 0 14px}
+canvas{width:100%;height:auto;background:#0e2733;border-radius:10px;display:block;margin:8px 0}
+.harms{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin:8px 0}
+label{font-size:.82rem;color:#9fc4d6;display:block}
+input[type=range]{width:100%;accent-color:var(--verde);margin-top:2px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+button{font-family:system-ui;font-size:.85rem;background:#13303f;color:#eaf6ff;border:1px solid #2a4d5f;border-radius:8px;padding:8px 12px;cursor:pointer}
+button:hover{border-color:var(--verde)}
+button.on{background:rgba(22,188,89,.18);border-color:var(--verde);color:var(--verde)}
+.msg{background:#13303f;border-left:4px solid var(--verde);padding:10px 14px;border-radius:8px;margin-top:8px;font-size:.92rem;line-height:1.45}
+b{color:var(--verde)}.amar{color:var(--amar)}
+.cap{font-size:.72rem;color:#5a8aa6;text-align:center;margin:-2px 0 4px}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span><h1>🔊 Fourier y el sonido</h1>
+<p class="sub">Un sonido complejo es una suma de notas puras. Movés la amplitud de cada armónico (seno fundamental + sus múltiplos) y ves cómo se arma la onda.</p>
+<canvas id="c" width="660" height="300"></canvas>
+<p class="cap">verde: la suma · gris fino: cada armónico que aportás</p>
+<div class="harms" id="harms"></div>
+<div class="btns">
+<button id="bsq">📐 Onda cuadrada (1/n)</button>
+<button id="bclr">limpiar</button>
+<button id="baud">🔈 Escuchar</button>
+</div>
+<div class="msg" id="msg"></div>
+</div><script>
+// Armónicos impares: fundamental(1), 3, 5, 7, 9. (Construyen la onda cuadrada de Fourier.)
+const FREQS=[1,3,5,7,9];
+const amps=FREQS.map(()=>0); amps[0]=1; // arranca con el seno puro
+const c=document.getElementById('c'),ctx=c.getContext('2d'),W=c.width,H=c.height;
+const mid=H/2, amp0=H*0.40; // amplitud total = 1 ocupa ~40% del alto
+
+// construir sliders
+const cont=document.getElementById('harms');
+const sliders=FREQS.map((f,i)=>{
+  const wrap=document.createElement('label');
+  const name=i===0?'fundamental sen(x)':(f+'º armónico sen('+f+'x)');
+  wrap.innerHTML=name+' · A = <b class="v">'+amps[i].toFixed(2)+'</b>'+
+    '<input type="range" min="0" max="1" step="0.01" value="'+amps[i]+'">';
+  cont.appendChild(wrap);
+  const s=wrap.querySelector('input'),v=wrap.querySelector('.v');
+  s.oninput=()=>{amps[i]=+s.value;v.textContent=amps[i].toFixed(2);draw();retune();};
+  return s;
+});
+
+function sumAt(t){ // t en radianes
+  let y=0; for(let i=0;i<FREQS.length;i++) y+=amps[i]*Math.sin(FREQS[i]*t);
+  return y;
+}
+function grid(){
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#143140';ctx.lineWidth=1;
+  for(let gx=0;gx<=8;gx++){const x=20+gx/8*(W-40);ctx.beginPath();ctx.moveTo(x,12);ctx.lineTo(x,H-12);ctx.stroke();}
+  ctx.strokeStyle='#26506a';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(20,mid);ctx.lineTo(W-20,mid);ctx.stroke();
+}
+function plot(fn,color,width,dash){
+  ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dash||[]);ctx.beginPath();
+  const N=W-40;
+  for(let px=0;px<=N;px++){
+    const t=px/N*4*Math.PI; // dos periodos del fundamental
+    const x=20+px, y=mid-fn(t)*amp0;
+    px?ctx.lineTo(x,y):ctx.moveTo(x,y);
+  }
+  ctx.stroke();ctx.setLineDash([]);
+}
+function draw(){
+  grid();
+  // cada armónico activo, tenue
+  for(let i=0;i<FREQS.length;i++){
+    if(amps[i]>0.001){ const f=FREQS[i],a=amps[i];
+      plot(t=>a*Math.sin(f*t),'rgba(159,196,214,.30)',1.2);
+    }
+  }
+  // la suma, protagonista
+  plot(sumAt,'#16BC59',3);
+  message();
+}
+function message(){
+  const activos=FREQS.filter((f,i)=>amps[i]>0.001);
+  const n=activos.length;
+  let txt;
+  if(n===0){txt='Subí al menos un armónico. Cada uno es una <b>nota pura</b>: un solo seno, una sola frecuencia.';}
+  else if(n===1){
+    const f=activos[0];
+    txt='Un solo seno: '+(f===1?'el <b>fundamental</b> sen(x)':'sen('+f+'x)')+
+      '. Es una <b>onda pura</b>, como la de un diapasón. Sumá más armónicos para complicarla.';
+  } else {
+    const sq=esCuadrada();
+    txt='Estás sumando <b>'+n+' senos</b> de distinta frecuencia: '+
+      'sen(x)·'+amps[0].toFixed(2)+(activos.slice(1).map(f=>' + sen('+f+'x)·'+amps[FREQS.indexOf(f)].toFixed(2)).join(''))+
+      '. La curva verde ya <b>no es un seno simple</b>: lo complejo se arma con lo simple — eso es <span class="amar">síntesis de Fourier</span>.';
+    if(sq) txt+=' Con amplitudes <b>1/n</b> sobre los impares aparecen los «escalones» de una <b>onda cuadrada</b>.';
+  }
+  document.getElementById('msg').innerHTML=txt;
+}
+function esCuadrada(){
+  // chequeo aproximado: amps proporcionales a 1/freq
+  for(let i=0;i<FREQS.length;i++){ if(Math.abs(amps[i]-1/FREQS[i])>0.06) return false; }
+  return true;
+}
+
+// presets
+const bsq=document.getElementById('bsq'),bclr=document.getElementById('bclr');
+bsq.onclick=()=>{FREQS.forEach((f,i)=>{amps[i]=1/f;sliders[i].value=amps[i];});
+  syncLabels();draw();retune();};
+bclr.onclick=()=>{FREQS.forEach((f,i)=>{amps[i]=0;sliders[i].value=0;});amps[0]=0;syncLabels();draw();retune();};
+function syncLabels(){cont.querySelectorAll('label').forEach((l,i)=>{l.querySelector('.v').textContent=amps[i].toFixed(2);l.querySelector('input').value=amps[i];});}
+
+// ---- audio opcional (WebAudio nativo, sin librerías) ----
+let actx=null,osc=[],playing=false;const baud=document.getElementById('baud');const F0=220; // La grave
+function retune(){ if(!playing||!actx) return;
+  osc.forEach(o=>{ const a=amps[o.idx]; o.gain.gain.setTargetAtTime(a*0.18,actx.currentTime,0.02); });
+}
+baud.onclick=()=>{
+  if(!playing){
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    actx.resume();
+    osc=FREQS.map((f,i)=>{
+      const o=actx.createOscillator(),g=actx.createGain();
+      o.type='sine';o.frequency.value=F0*f;g.gain.value=amps[i]*0.18;
+      o.connect(g).connect(actx.destination);o.start();
+      return {o,gain:g,idx:i};
+    });
+    playing=true;baud.classList.add('on');baud.textContent='⏹ Detener';
+  } else {
+    osc.forEach(o=>{o.o.stop();});osc=[];playing=false;baud.classList.remove('on');baud.textContent='🔈 Escuchar';
+  }
+};
+
+draw();
+</script></body></html>

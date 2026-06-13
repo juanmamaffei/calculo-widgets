@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Los navegantes y la ley del coseno</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;--rojo:#e06b6b;--oro:#ffd166;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:680px;margin:0 auto}.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.25rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.9rem;margin:0 0 14px}
+canvas{width:100%;height:auto;background:#0e2733;border-radius:10px;display:block;margin:8px 0}
+.eq{font-family:ui-monospace,monospace;font-size:1.05rem;text-align:center;color:var(--verde);margin:6px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:6px 0}
+label{font-size:.85rem;color:#9fc4d6}input[type=range]{width:100%;accent-color:var(--verde)}
+.msg{background:#13303f;border-left:4px solid var(--verde);padding:10px 14px;border-radius:8px;margin-top:10px;font-size:.92rem;line-height:1.45}
+.msg.recto{border-left-color:var(--oro)}
+b{color:var(--verde)}.oro{color:var(--oro)}.rojo{color:var(--rojo)}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span><h1>🧭 Los navegantes y la ley del coseno</h1>
+<p class="sub">Conocés dos lados (a, b) y el ángulo C entre ellos. La ley del coseno te da el tercer lado c, en cualquier triángulo. Movelos y mirá.</p>
+<div class="eq" id="eq">c² = a² + b² − 2·a·b·cos(C)</div>
+<canvas id="c" width="660" height="420"></canvas>
+<div class="grid">
+<label>lado a = <b id="va">7</b><input type="range" id="a" min="2" max="9" value="7" step="0.5"></label>
+<label>lado b = <b id="vb">5</b><input type="range" id="b" min="2" max="9" value="5" step="0.5"></label>
+<label>ángulo C = <b id="vC">60</b>°<input type="range" id="C" min="20" max="160" value="60" step="1"></label>
+</div>
+<div class="msg" id="msg"></div>
+</div><script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+const A=document.getElementById('a'),B=document.getElementById('b'),C=document.getElementById('C');
+const D=x=>x*Math.PI/180, R=x=>x*180/Math.PI, r1=x=>Math.round(x*10)/10;
+
+function draw(){
+  const a=+A.value, b=+B.value, Cdeg=+C.value, Cr=D(Cdeg);
+  document.getElementById('va').textContent=a;
+  document.getElementById('vb').textContent=b;
+  document.getElementById('vC').textContent=Cdeg;
+
+  // Ley del coseno
+  const c2=a*a+b*b-2*a*b*Math.cos(Cr), c=Math.sqrt(c2);
+  // Ley del seno para los otros dos ángulos (A opuesto a a, B opuesto a b)
+  const Aang=R(Math.asin(Math.min(1,a*Math.sin(Cr)/c)));
+  const Bang=180-Cdeg-Aang;
+
+  // Vértices del triángulo. Colocamos el vértice C (ángulo C) y desde él
+  // salen el lado b (hacia el vértice A) y el lado a (hacia el vértice B).
+  // Vc = vértice donde está el ángulo C; opuesto a él está el lado c (el calculado).
+  const Vc={x:0,y:0};
+  const Va={x:b,y:0};                                 // a distancia b de C
+  const Vb={x:a*Math.cos(Cr), y:-a*Math.sin(Cr)};     // a distancia a de C
+  // Encajar en canvas
+  const xs=[Vc.x,Va.x,Vb.x], ys=[Vc.y,Va.y,Vb.y];
+  const minx=Math.min(...xs),maxx=Math.max(...xs),miny=Math.min(...ys),maxy=Math.max(...ys);
+  const pad=56, sc=Math.min((W-2*pad)/Math.max(0.1,maxx-minx),(H-2*pad)/Math.max(0.1,maxy-miny));
+  const ox=(W-(maxx+minx)*sc)/2, oy=(H-(maxy+miny)*sc)/2;
+  const P=p=>({x:ox+p.x*sc, y:oy+p.y*sc});
+  const pc=P(Vc),pa=P(Va),pb=P(Vb);
+
+  ctx.clearRect(0,0,W,H);
+  // mar de fondo (líneas tenues)
+  ctx.strokeStyle='#13303f';ctx.lineWidth=1;
+  for(let y=20;y<H;y+=28){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  const recto=Math.abs(Cdeg-90)<0.5;
+  // relleno del triángulo
+  ctx.beginPath();ctx.moveTo(pc.x,pc.y);ctx.lineTo(pa.x,pa.y);ctx.lineTo(pb.x,pb.y);ctx.closePath();
+  ctx.fillStyle=recto?'rgba(255,209,102,.13)':'rgba(0,91,127,.32)';ctx.fill();
+
+  // lados: b = Vc->Va, a = Vc->Vb, c = Va->Vb (el calculado, en verde)
+  function seg(p,q,col,wd){ctx.strokeStyle=col;ctx.lineWidth=wd;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke();}
+  seg(pc,pa,'#5a8aa6',3);            // b
+  seg(pc,pb,'#5a8aa6',3);            // a
+  seg(pa,pb,'#16BC59',4);            // c (resultado)
+
+  // arco del ángulo C
+  const ang0=Math.atan2(pa.y-pc.y,pa.x-pc.x), ang1=Math.atan2(pb.y-pc.y,pb.x-pc.x);
+  ctx.strokeStyle=recto?'#ffd166':'#eaf6ff';ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(pc.x,pc.y,26,Math.min(ang0,ang1),Math.max(ang0,ang1));ctx.stroke();
+  if(recto){ // marca de ángulo recto
+    ctx.strokeStyle='#ffd166';const u={x:Math.cos(ang0),y:Math.sin(ang0)},v={x:Math.cos(ang1),y:Math.sin(ang1)},s=16;
+    ctx.beginPath();ctx.moveTo(pc.x+u.x*s,pc.y+u.y*s);ctx.lineTo(pc.x+(u.x+v.x)*s,pc.y+(u.y+v.y)*s);ctx.lineTo(pc.x+v.x*s,pc.y+v.y*s);ctx.stroke();
+  }
+
+  // etiquetas de lados (en el medio de cada lado)
+  ctx.font='13px ui-monospace,monospace';ctx.textAlign='center';
+  function lbl(p,q,txt,col){ctx.fillStyle=col;ctx.fillText(txt,(p.x+q.x)/2,(p.y+q.y)/2-6);}
+  lbl(pc,pa,'b='+b,'#9fc4d6');
+  lbl(pc,pb,'a='+a,'#9fc4d6');
+  lbl(pa,pb,'c='+r1(c),'#16BC59');
+
+  // vértices y faros
+  ctx.font='12px system-ui';
+  function dot(p,col,t,off){ctx.fillStyle=col;ctx.beginPath();ctx.arc(p.x,p.y,6,0,7);ctx.fill();ctx.fillStyle='#eaf6ff';ctx.fillText(t,p.x,p.y+(off||-12));}
+  dot(pc,'#ffd166','⛵ barco',-14);
+  dot(pa,'#16BC59','faro A',18);
+  dot(pb,'#16BC59','faro B',-14);
+  // etiqueta del ángulo C
+  ctx.fillStyle=recto?'#ffd166':'#eaf6ff';ctx.font='12px ui-monospace,monospace';
+  ctx.fillText('C='+Cdeg+'°', pc.x+34*Math.cos((ang0+ang1)/2), pc.y+34*Math.sin((ang0+ang1)/2)+4);
+  ctx.textAlign='left';
+
+  // mensaje
+  const corr=2*a*b*Math.cos(Cr);
+  const m=document.getElementById('msg');
+  let txt='Ley del coseno: c² = '+a+'² + '+b+'² − 2·'+a+'·'+b+'·cos('+Cdeg+'°) = '+r1(a*a)+' + '+r1(b*b)+' − '+r1(corr)+' = <b>'+r1(c2)+'</b>, así que c = <b>'+r1(c)+'</b>. ';
+  if(recto){
+    m.className='msg recto';
+    txt+='Con <span class="oro">C = 90°</span>, cos(90°)=0: el término de corrección se anula y queda <span class="oro">c² = a² + b²</span>, ¡el viejo <span class="oro">Pitágoras</span>! La ley del coseno lo contiene como caso particular.';
+  }else{
+    m.className='msg';
+    const signo = Cdeg<90? 'positiva (resta), así que c queda <b>más corto</b>' : 'negativa (suma), así que c queda <b>más largo</b>';
+    txt+='Como C ≠ 90°, Pitágoras daría mal ('+r1(Math.sqrt(a*a+b*b))+'). La corrección −2ab·cos(C) es '+signo+' que en un triángulo recto. ';
+    txt+='Por la ley del seno, los otros ángulos son A ≈ <b>'+r1(Aang)+'°</b> y B ≈ <b>'+r1(Bang)+'°</b> (suman 180° con C). Tres datos bien elegidos resuelven todo el triángulo: así se ubicaban los navegantes sin costa a la vista.';
+  }
+  m.innerHTML=txt;
+}
+[A,B,C].forEach(s=>s.oninput=draw);draw();
+</script></body></html>

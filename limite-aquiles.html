@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>El límite · Volvemos a Aquiles</title>
+<style>
+  :root { --curso:#005b7f; --verde:#16BC59; --tinta:#0b1f2a; --rojo:#e06b6b; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+         background:var(--tinta); color:#eaf6ff; padding:18px; }
+  .wrap { max-width:680px; margin:0 auto; }
+  .pill { display:inline-block; background:rgba(22,188,89,.15); color:var(--verde);
+          padding:.15em .6em; border-radius:999px; font-size:.8rem; font-weight:600; }
+  h1 { font-size:1.25rem; margin:.4em 0 .2em; }
+  .sub { color:#9fc4d6; font-size:.9rem; margin:0 0 16px; }
+  canvas { width:100%; height:auto; background:#0e2733; border-radius:10px; display:block; margin:10px 0 4px; }
+  .row { display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin:8px 0 2px; flex-wrap:wrap; }
+  .small { color:#9fc4d6; font-size:.85rem; }
+  label { font-size:.85rem; color:#9fc4d6; display:block; }
+  input[type=range] { width:100%; accent-color:var(--verde); height:28px; }
+  b { color:var(--verde); }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; margin:6px 0 2px; }
+  .chip { background:#13303f; color:#bfe3ff; border:1px solid #26506a; border-radius:999px;
+          padding:.25em .7em; font-size:.8rem; cursor:pointer; font-family:ui-monospace,Menlo,monospace; }
+  .chip.on { background:rgba(22,188,89,.18); color:var(--verde); border-color:var(--verde); }
+  .big { font-size:1.6rem; font-weight:800; color:var(--verde); line-height:1.1;
+         font-variant-numeric:tabular-nums; margin:6px 0 2px; }
+  .msg { background:#13303f; border-left:4px solid var(--verde); padding:10px 14px;
+         border-radius:8px; margin-top:12px; min-height:1.5em; line-height:1.45; }
+  .foot { color:#9fc4d6; font-size:.85rem; margin-top:14px; line-height:1.5; }
+  code { font-family:ui-monospace,Menlo,monospace; color:#bfe3ff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="pill">interactivo</span>
+  <h1>🏃 Tan cerca de 1 como quieras</h1>
+  <p class="sub">Elegí un margen ε y el applet busca cuántos pasos de Aquiles hacen falta para que la suma ½+¼+⅛+… entre en la franja (1−ε, 1) <i>y no salga más</i>. Eso es el límite.</p>
+
+  <canvas id="c" width="660" height="240"></canvas>
+
+  <div class="chips" id="chips">
+    <span class="chip" data-e="0.1">ε = 0,1</span>
+    <span class="chip" data-e="0.01">ε = 0,01</span>
+    <span class="chip" data-e="0.001">ε = 0,001</span>
+    <span class="chip" data-e="0.000001">ε = 0,000001</span>
+  </div>
+  <label>margen ε (deslizá hacia la izquierda = más exigente): <b id="ve">0,1</b>
+    <input id="e" type="range" min="0" max="200" value="40" aria-label="exponente del margen epsilon"></label>
+
+  <div class="row"><span class="small">pasos necesarios para entrar y quedarse en la franja</span></div>
+  <div class="big" id="N">N = 4</div>
+
+  <div class="msg" id="msg"></div>
+
+  <p class="foot">Por chico que elijas el margen ε, <b>siempre existe un N</b> a partir del cual la suma queda más cerca de 1 que ε, para siempre. Ese «para cualquier ε hay un N» es la idea de límite de Weierstrass: la suma infinita ½+¼+⅛+… <b>vale exactamente 1</b>, no «casi». Ahí se cierra, con rigor, la paradoja de Zenón: Aquiles da infinitos pasos en tiempo finito.</p>
+</div>
+
+<script>
+const c = document.getElementById('c'), ctx = c.getContext('2d');
+const E = document.getElementById('e');
+const W = c.width, H = c.height;
+const fmt = (x,d=7) => x.toLocaleString('es-AR',{maximumFractionDigits:d});
+
+// slider 0..200 -> epsilon de 0,5 a ~1e-6 (escala log)
+function sliderEps(){
+  const t = +E.value / 200;            // 0..1
+  const lo = Math.log10(0.5), hi = Math.log10(1e-6);
+  return Math.pow(10, lo + (hi-lo)*t);
+}
+// N mínimo tal que 1 - (1 - 1/2^N) = 1/2^N < eps  =>  N > log2(1/eps)
+function minN(eps){ return Math.max(1, Math.ceil(Math.log2(1/eps) + 1e-9)); }
+
+const PAD = 36, BASE = 150, TOP = 50;
+function xpx(v){ return PAD + v*(W - 2*PAD); }      // v en [0,1]
+
+function draw(){
+  const eps = sliderEps();
+  const N = minN(eps);
+  const sumN = 1 - 1/Math.pow(2,N);
+  const sumPrev = N>1 ? 1 - 1/Math.pow(2,N-1) : 0;
+
+  document.getElementById('ve').textContent = fmt(eps, eps<1e-4?8:5);
+  document.getElementById('N').textContent = 'N = ' + N + ' pasos';
+
+  // marcar chip activo si coincide
+  document.querySelectorAll('.chip').forEach(ch=>{
+    ch.classList.toggle('on', Math.abs(Math.log10(+ch.dataset.e) - Math.log10(eps)) < 0.04);
+  });
+
+  ctx.clearRect(0,0,W,H);
+
+  // franja objetivo (1-eps, 1) -- ampliada visualmente con un mínimo de ancho para verla
+  const epsVis = Math.max(eps, 0.012);
+  const fx = xpx(1-epsVis), tx = xpx(1);
+  ctx.fillStyle = 'rgba(22,188,89,.20)';
+  ctx.fillRect(fx, TOP-18, tx-fx, (BASE)-(TOP-18)+22);
+
+  // eje [0,1]
+  ctx.strokeStyle = '#26506a'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(xpx(0), BASE); ctx.lineTo(xpx(1)+6, BASE); ctx.stroke();
+  ctx.lineWidth = 1;
+  [0,0.25,0.5,0.75,1].forEach(v=>{
+    const X = xpx(v);
+    ctx.strokeStyle = '#26506a'; ctx.beginPath(); ctx.moveTo(X,BASE-5); ctx.lineTo(X,BASE+5); ctx.stroke();
+    ctx.fillStyle = '#5a8aa6'; ctx.font = '11px system-ui';
+    const lbl = v===0?'0':v===1?'1':fmt(v,2);
+    ctx.fillText(lbl, X-6, BASE+20);
+  });
+
+  // borde 1 (límite) y borde 1-eps
+  ctx.setLineDash([4,4]); ctx.lineWidth = 2;
+  ctx.strokeStyle = '#eaf6ff'; ctx.beginPath(); ctx.moveTo(xpx(1),TOP-22); ctx.lineTo(xpx(1),BASE+8); ctx.stroke();
+  ctx.strokeStyle = '#16BC59'; ctx.beginPath(); ctx.moveTo(fx,TOP-22); ctx.lineTo(fx,BASE+8); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#eaf6ff'; ctx.font = 'bold 12px system-ui'; ctx.fillText('1 = límite', xpx(1)-30, TOP-28);
+  ctx.fillStyle = '#16BC59'; ctx.font = '11px ui-monospace,Menlo,monospace'; ctx.fillText('1−ε', fx-10, TOP-28);
+
+  // sumas parciales como puntos sobre el eje, hasta N (cap visual)
+  const cap = Math.min(N, 24);
+  for (let k=1;k<=cap;k++){
+    const s = 1 - 1/Math.pow(2,k);
+    const X = xpx(s);
+    const inside = (1 - s) < eps;
+    ctx.fillStyle = inside ? '#16BC59' : '#7fb2cc';
+    ctx.beginPath(); ctx.arc(X, BASE, k===cap?5.5:3.2, 0, 7); ctx.fill();
+  }
+  // si N>cap, marcar el N real igual sobre el borde
+  // punto destacado de la suma parcial N (entra en la franja)
+  const Xn = xpx(sumN);
+  ctx.fillStyle = '#16BC59';
+  ctx.beginPath(); ctx.arc(Xn, BASE, 6.5, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#eaf6ff'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(Xn, BASE, 6.5, 0, 7); ctx.stroke();
+
+  // etiqueta del paso N que entra
+  ctx.fillStyle = '#eaf6ff'; ctx.font = '11px system-ui';
+  ctx.fillText('paso N='+N, Math.min(Xn-22, W-PAD-70), BASE-30);
+
+  // flecha apuntando al 1
+  ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(Xn+10, BASE-40); ctx.lineTo(xpx(1)-4, BASE-40); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(xpx(1)-4,BASE-40); ctx.lineTo(xpx(1)-12,BASE-44); ctx.lineTo(xpx(1)-12,BASE-36); ctx.fill();
+
+  // mensaje pedagógico
+  const m = document.getElementById('msg');
+  const dist = 1 - sumN; // = 1/2^N
+  m.innerHTML =
+    'Para quedar a menos de <code>ε = '+fmt(eps, eps<1e-4?8:5)+'</code> de 1 hacen falta <b>'+N+' pasos</b>. '+
+    'Ahí la suma vale <code>'+fmt(sumN, Math.min(10, N+1))+'</code> y le falta solo <code>1/2'+sup(N)+' = '+fmt(dist, Math.min(10,N+2))+'</code> &lt; ε. '+
+    (N>=24 ? 'A partir de ese paso ya no se distingue del 1 en pantalla, pero la franja existe igual. '
+           : 'De ahí en adelante <b>nunca vuelve a salir</b> de la franja. ')+
+    'Achicá ε todo lo que quieras: siempre aparece un N que alcanza.';
+}
+
+// superíndice unicode para el exponente
+function sup(n){
+  const map = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+  return String(n).split('').map(d=>map[d]).join('');
+}
+
+E.addEventListener('input', draw);
+document.querySelectorAll('.chip').forEach(ch=>{
+  ch.addEventListener('click', ()=>{
+    const eps = +ch.dataset.e;
+    const lo = Math.log10(0.5), hi = Math.log10(1e-6);
+    const t = (Math.log10(eps) - lo) / (hi - lo);
+    E.value = Math.round(Math.min(1,Math.max(0,t))*200);
+    draw();
+  });
+});
+draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>La curva que nunca llega</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;--rojo:#e06b6b;--amar:#ffd166;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:680px;margin:0 auto}
+.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.25rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.9rem;margin:0 0 14px}
+.eq{font-family:ui-monospace,monospace;font-size:1.15rem;text-align:center;color:var(--verde);margin:6px 0}
+canvas{width:100%;height:auto;background:#0e2733;border-radius:10px;display:block;margin:8px 0;touch-action:none}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:6px 0}
+label{font-size:.85rem;color:#9fc4d6}input[type=range]{width:100%;accent-color:var(--verde)}
+.full{grid-column:1/-1}
+.msg{background:#13303f;border-left:4px solid var(--verde);padding:10px 14px;border-radius:8px;margin-top:10px;font-size:.92rem;line-height:1.45}
+b{color:var(--verde)}.r{color:var(--rojo)}.am{color:var(--amar)}
+@media(max-width:430px){.grid{grid-template-columns:1fr 1fr}}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span><h1>📉 La curva que nunca llega</h1>
+<p class="sub">La racional f(x) = (a·x + b)/(x − v) tiene una asíntota <span class="r">vertical</span> en x = v y una <span class="am">horizontal</span> en y = a. Deslizá x: el punto recorre la curva y se pega a la recta sin tocarla.</p>
+<div class="eq" id="eq"></div>
+<canvas id="c" width="660" height="380"></canvas>
+<div class="grid">
+<label>a (asíntota horiz.): <b id="va">1</b><input type="range" id="a" min="-3" max="3" value="1" step="0.5"></label>
+<label>b (numerador): <b id="vb">1</b><input type="range" id="b" min="-4" max="4" value="1" step="0.5"></label>
+<label>v (asíntota vert.): <b id="vv">0</b><input type="range" id="v" min="-4" max="4" value="0" step="0.5"></label>
+<label class="full">x del punto viajero: <b id="vx">2</b><input type="range" id="x" min="-10" max="10" value="2" step="0.05"></label>
+</div>
+<div class="msg" id="msg"></div>
+</div><script>
+const c=document.getElementById('c'),ctx=c.getContext('2d'),W=c.width,H=c.height;
+const A=document.getElementById('a'),B=document.getElementById('b'),V=document.getElementById('v'),X=document.getElementById('x');
+const lo=-10,hi=10; // rango en ambos ejes
+const sx=u=>34+(u-lo)/(hi-lo)*(W-48), sy=u=>H-26-(u-lo)/(hi-lo)*(H-44);
+const f=(x,a,b,v)=>(a*x+b)/(x-v);
+function fmt(n){return (Math.round(n*100)/100).toString();}
+function grid(){
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#1d3d4d';ctx.lineWidth=1;
+  for(let u=lo;u<=hi;u++){ctx.beginPath();ctx.moveTo(sx(u),12);ctx.lineTo(sx(u),H-14);ctx.stroke();ctx.beginPath();ctx.moveTo(20,sy(u));ctx.lineTo(W-14,sy(u));ctx.stroke();}
+  ctx.strokeStyle='#5a8aa6';ctx.lineWidth=1.4;
+  ctx.beginPath();ctx.moveTo(20,sy(0));ctx.lineTo(W-14,sy(0));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sx(0),12);ctx.lineTo(sx(0),H-14);ctx.stroke();
+}
+function draw(){
+  const a=+A.value,b=+B.value,v=+V.value,x=+X.value;
+  document.getElementById('va').textContent=fmt(a);
+  document.getElementById('vb').textContent=fmt(b);
+  document.getElementById('vv').textContent=fmt(v);
+  document.getElementById('vx').textContent=fmt(x);
+  document.getElementById('eq').textContent='f(x) = ('+fmt(a)+'·x + '+fmt(b)+') / (x '+(v<0?'+ '+fmt(-v):'− '+fmt(v))+')';
+  grid();
+  // asintota vertical x=v (roja punteada)
+  ctx.strokeStyle='#e06b6b';ctx.lineWidth=2;ctx.setLineDash([6,4]);
+  ctx.beginPath();ctx.moveTo(sx(v),12);ctx.lineTo(sx(v),H-14);ctx.stroke();
+  // asintota horizontal y=a (amarilla punteada)
+  ctx.strokeStyle='#ffd166';
+  ctx.beginPath();ctx.moveTo(20,sy(a));ctx.lineTo(W-14,sy(a));ctx.stroke();
+  ctx.setLineDash([]);
+  // curva (dos ramas, sin cruzar la asintota vertical)
+  ctx.strokeStyle='#16BC59';ctx.lineWidth=3;
+  for(const side of [-1,1]){
+    ctx.beginPath();let started=false;
+    for(let px=0;px<=W;px++){
+      const u=lo+(px-34)/(W-48)*(hi-lo);
+      if(side<0 && u>=v-0.001) continue;
+      if(side>0 && u<=v+0.001) continue;
+      const y=f(u,a,b,v);
+      if(y<lo-2||y>hi+2){started=false;continue;}
+      const X0=sx(u),Y0=sy(y);
+      if(!started){ctx.moveTo(X0,Y0);started=true;}else ctx.lineTo(X0,Y0);
+    }
+    ctx.stroke();
+  }
+  // etiquetas asintotas
+  ctx.font='11px system-ui';
+  ctx.fillStyle='#ffd166';ctx.fillText('y = '+fmt(a)+' (horizontal)',W-150,sy(a)-6);
+  ctx.fillStyle='#e06b6b';
+  if(sx(v)<W-90)ctx.fillText('x = '+fmt(v),sx(v)+4,18);else ctx.fillText('x = '+fmt(v),sx(v)-58,18);
+  // punto viajero sobre la curva
+  const cerca=Math.abs(x-v)<0.06;
+  const y=cerca?null:f(x,a,b,v);
+  if(y!==null && y>=lo-2 && y<=hi+2){
+    const X0=sx(x),Y0=sy(Math.max(lo-1,Math.min(hi+1,y)));
+    // segmento punteado del punto a la asintota horizontal
+    ctx.strokeStyle='rgba(255,209,102,.55)';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(X0,Y0);ctx.lineTo(X0,sy(a));ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(X0,Y0,6,0,7);ctx.fill();
+    ctx.strokeStyle='#0b1f2a';ctx.lineWidth=2;ctx.beginPath();ctx.arc(X0,Y0,6,0,7);ctx.stroke();
+  }
+  // mensaje pedagogico
+  const dist=Math.abs((y===null?Infinity:y)-a);
+  let m;
+  if(cerca){
+    m='El punto está casi sobre la asíntota <span class="r">vertical x = '+fmt(v)+'</span>: ahí el denominador se hace 0 y f(x) <b>se dispara hacia el infinito</b>. La función no existe en x = '+fmt(v)+' — se acerca infinitamente a esa recta sin tocarla.';
+  }else{
+    const lejos=Math.abs(x)>6;
+    m='En x = <b>'+fmt(x)+'</b>, f(x) = <b>'+fmt(y)+'</b>. Su distancia a la asíntota horizontal y = '+fmt(a)+' es <b>'+fmt(dist)+'</b>. '+
+      (lejos
+        ? 'A medida que x se va al infinito, esa distancia se achica tanto como quieras: la curva se <b>pega a y = '+fmt(a)+'</b> pero <b>nunca la toca</b>. Ese es su límite a lo lejos.'
+        : 'Llevá x hacia ±10: vas a ver cómo la distancia a y = '+fmt(a)+' se vuelve minúscula sin llegar nunca a 0. <span class="am">Acercarse tanto como quieras no es tocar.</span>');
+  }
+  document.getElementById('msg').innerHTML=m;
+}
+[A,B,V,X].forEach(s=>s.oninput=draw);draw();
+</script></body></html>

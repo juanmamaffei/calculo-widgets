@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La pregunta del año, resuelta · ½ + ¼ + ⅛ + … = 1</title>
+<style>
+  :root { --curso:#005b7f; --verde:#16BC59; --tinta:#0b1f2a; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+         background:var(--tinta); color:#eaf6ff; padding:18px; }
+  .wrap { max-width:680px; margin:0 auto; }
+  h1 { font-size:1.25rem; margin:.4em 0 .2em; }
+  .sub { color:#9fc4d6; font-size:.9rem; margin:0 0 16px; }
+  .pill { display:inline-block; background:rgba(22,188,89,.15); color:var(--verde);
+          padding:.15em .6em; border-radius:999px; font-size:.8rem; font-weight:600; }
+  canvas { width:100%; height:auto; background:#0e2733; border-radius:10px; display:block; margin:8px 0; }
+  .row { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin:12px 0 4px; flex-wrap:wrap; }
+  .small { color:#9fc4d6; font-size:.85rem; }
+  input[type=range] { width:100%; accent-color:var(--verde); height:28px; }
+  .big { font-size:2.6rem; font-weight:800; color:var(--verde); line-height:1; font-variant-numeric:tabular-nums; }
+  .eq { font-family:ui-monospace,Menlo,monospace; font-size:1.05rem; text-align:center; color:#bfe3ff; margin:8px 0; word-break:break-word; }
+  .msg { background:#13303f; border-left:4px solid var(--verde); padding:10px 14px; border-radius:8px; margin-top:14px; min-height:1.5em; }
+  .msg b { color:var(--verde); }
+  .note { color:#9fc4d6; font-size:.85rem; margin-top:16px; }
+  .note b { color:#eaf6ff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="pill">interactivo</span>
+  <h1>🎓 La pregunta del año, resuelta</h1>
+  <p class="sub">Por última vez: deslizá los términos y mirá ½ + ¼ + ⅛ + … llenar exactamente el cuadrado unidad. Lo que el primer día era un misterio, hoy tiene nombre, demostración y respuesta: el límite es 1.</p>
+
+  <canvas id="c" width="660" height="330"></canvas>
+
+  <div class="row">
+    <span class="small">términos sumados: <b id="n">1</b></span>
+    <span class="small">falta para 1: <b id="falta">0,5</b></span>
+  </div>
+  <input id="s" type="range" min="1" max="20" value="1" aria-label="cantidad de términos">
+
+  <div class="row"><span class="small">suma parcial = 1 − 1/2<sup>n</sup></span></div>
+  <div class="big" id="v">0,5</div>
+  <div class="eq" id="eq">½ = 0,5</div>
+
+  <div class="msg" id="msg"></div>
+  <p class="note">Cada término ocupa <b>la mitad de lo que queda</b>: por eso el cuadrado se completa pero nunca se desborda. Con finitos términos siempre falta un pedacito (1/2<sup>n</sup>); ese pedacito se hace tan chico como uno quiera. Su <b>límite es 1</b>, exacto. Aquiles da infinitos pasos en tiempo finito: así, el límite deshace la paradoja de Zenón. Esa cuenta usó todo el año: reales sin huecos, sucesiones, y la idea de límite. La pregunta de 2500 años, respondida.</p>
+</div>
+
+<script>
+  const s = document.getElementById('s');
+  const c = document.getElementById('c'), ctx = c.getContext('2d'), W = c.width, H = c.height;
+  const fmt = x => x.toLocaleString('es-AR',{maximumFractionDigits:7});
+  const fracs = ['½','¼','⅛','1/16','1/32','1/64','1/128'];
+  // tonos que alternan entre azul curso y verde, para ver cada mitad
+  const colA = '#005b7f', colB = '#16BC59';
+
+  function draw(){
+    const n = +s.value;
+    let sum = 0;
+    // layout del cuadrado unidad
+    const pad = 18, side = Math.min(W - pad*2, H - pad*2);
+    const ox = (W - side)/2, oy = (H - side)/2;
+
+    ctx.clearRect(0,0,W,H);
+    // fondo del cuadrado (lo que aún falta)
+    ctx.fillStyle = '#0e2733';
+    ctx.fillRect(ox, oy, side, side);
+
+    // ir partiendo el rectángulo restante por la mitad, alternando vertical/horizontal
+    let x = ox, y = oy, w = side, h = side;
+    let vertical = true;
+    for (let k=1; k<=n; k++){
+      const t = 1/2**k;
+      sum += t;
+      ctx.fillStyle = (k % 2 === 1) ? colA : colB;
+      let bx, by, bw, bh;
+      if (vertical){          // tomar la mitad izquierda de lo que queda
+        bw = w/2; bh = h; bx = x; by = y;
+        x = x + w/2; w = w/2; // el resto queda a la derecha
+      } else {                // tomar la mitad superior de lo que queda
+        bw = w; bh = h/2; bx = x; by = y;
+        y = y + h/2; h = h/2; // el resto queda abajo
+      }
+      ctx.fillRect(bx, by, bw, bh);
+      // contorno tenue de cada mitad
+      ctx.strokeStyle = 'rgba(11,31,42,.55)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(bx+0.5, by+0.5, bw-1, bh-1);
+      // etiqueta de la fracción si entra
+      if (k <= 7 && Math.min(bw,bh) > 26){
+        ctx.fillStyle = '#eaf6ff';
+        ctx.font = (Math.min(bw,bh) > 60 ? 'bold 18px ' : 'bold 12px ') + 'system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(fracs[k-1] || '1/'+2**k, bx+bw/2, by+bh/2);
+      }
+      vertical = !vertical;
+    }
+
+    // borde del cuadrado unidad
+    ctx.strokeStyle = '#5a8aa6'; ctx.lineWidth = 2;
+    ctx.strokeRect(ox, oy, side, side);
+    // marca "= 1"
+    ctx.fillStyle = '#9fc4d6'; ctx.font = '12px system-ui';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('área total = 1', ox, oy - 6 < 12 ? oy + side + 14 : oy - 6);
+
+    // textos / números
+    document.getElementById('n').textContent = n;
+    document.getElementById('v').textContent = fmt(sum);
+    document.getElementById('falta').textContent = fmt(1 - sum);
+
+    const shown = [];
+    for (let k=1; k<=Math.min(n,5); k++) shown.push(fracs[k-1] || '1/'+2**k);
+    document.getElementById('eq').textContent =
+      shown.join(' + ') + (n>5 ? ' + … ('+n+' términos)' : '') + ' = ' + fmt(sum);
+
+    const m = document.getElementById('msg');
+    if (n >= 18)
+      m.innerHTML = '🎯 El hueco que falta vale 1/2<sup>'+n+'</sup> = <b>'+fmt(1-sum)+'</b>: ínfimo, pero no es cero. Por eso decimos <b>límite</b>, no «último término». El cuadrado se completa <b>exactamente</b> en el infinito: la suma es <b>1</b>. La pregunta del año, cerrada.';
+    else if (n >= 8)
+      m.innerHTML = 'Quedó un pedacito de <b>'+fmt(1-sum)+'</b>. Por más términos que sumes nunca te pasás de 1, y la falta se achica a la mitad cada vez. Eso es <b>converger</b> a 1.';
+    else if (n >= 3)
+      m.innerHTML = 'Cada mitad nueva cubre <b>la mitad de lo que faltaba</b>. La suma vale 1 − 1/2<sup>'+n+'</sup> = <b>'+fmt(sum)+'</b> y se acerca a 1.';
+    else
+      m.innerHTML = 'Seguí sumando: agregá mitades y mirá cómo se llena el cuadrado.';
+  }
+
+  s.addEventListener('input', draw);
+  draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Heaviside y el interruptor</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;--rojo:#e06b6b;--ambar:#ffd166;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:680px;margin:0 auto}
+.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.25rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.9rem;margin:0 0 14px}
+.eq{font-family:ui-monospace,monospace;font-size:1.05rem;text-align:center;color:var(--verde);margin:6px 0;line-height:1.5}
+canvas{width:100%;height:auto;background:#0e2733;border-radius:10px;display:block;margin:8px 0}
+.tabs{display:flex;gap:6px;margin:8px 0}
+.tabs button{flex:1;background:#13303f;color:#9fc4d6;border:1px solid #26506a;border-radius:8px;padding:8px 4px;font:inherit;font-size:.82rem;font-weight:600;cursor:pointer}
+.tabs button.on{background:rgba(22,188,89,.18);color:var(--verde);border-color:var(--verde)}
+.grid{display:grid;grid-template-columns:1fr;gap:10px;margin:6px 0}
+label{font-size:.85rem;color:#9fc4d6;display:block}
+input[type=range]{width:100%;accent-color:var(--verde)}
+.msg{background:#13303f;border-left:4px solid var(--verde);padding:10px 14px;border-radius:8px;margin-top:10px;font-size:.92rem;line-height:1.5}
+b{color:var(--verde)}.izq{color:var(--ambar)}.der{color:var(--rojo)}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span><h1>🔌 Heaviside y el interruptor</h1>
+<p class="sub">Una función puede definirse por partes. Elegí una función especial, deslizá el punto de salto y mirá la discontinuidad en vivo: qué valor toma al acercarse por izquierda y por derecha.</p>
+<div class="tabs">
+<button data-f="step" class="on">Escalón H(t−a)</button>
+<button data-f="floor">Parte entera ⌊x⌋</button>
+<button data-f="ramp">Rampa máx(0,x−a)</button>
+</div>
+<div class="eq" id="eq"></div>
+<canvas id="c" width="660" height="380"></canvas>
+<div class="grid">
+<label id="lab-a">punto de salto a = <b id="va">0</b><input type="range" id="a" min="-4" max="4" value="0" step="0.5"></label>
+<label>punto de prueba x = <b id="vx">0</b><input type="range" id="x" min="-5" max="5" value="0" step="0.1"></label>
+</div>
+<div class="msg" id="msg"></div>
+</div><script>
+const c=document.getElementById('c'),ctx=c.getContext('2d'),W=c.width,H=c.height;
+const A=document.getElementById('a'),X=document.getElementById('x');
+let fn='step';
+const xm=-5,xM=5,ym=-2.5,yM=4.5;
+const sx=v=>40+(v-xm)/(xM-xm)*(W-60);
+const sy=v=>H-30-(v-ym)/(yM-ym)*(H-60);
+
+// definiciones de funciones por partes
+function f(t,a){
+  if(fn==='step') return t<a?0:1;
+  if(fn==='floor') return Math.floor(t);
+  return Math.max(0,t-a); // ramp
+}
+function grid(){
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#1d3d4d';ctx.lineWidth=1;ctx.font='10px system-ui';
+  for(let v=Math.ceil(xm);v<=Math.floor(xM);v++){ctx.beginPath();ctx.moveTo(sx(v),20);ctx.lineTo(sx(v),H-20);ctx.stroke();}
+  for(let v=Math.ceil(ym);v<=Math.floor(yM);v++){ctx.beginPath();ctx.moveTo(30,sy(v));ctx.lineTo(W-20,sy(v));ctx.stroke();}
+  // ejes
+  ctx.strokeStyle='#5a8aa6';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(30,sy(0));ctx.lineTo(W-20,sy(0));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sx(0),20);ctx.lineTo(sx(0),H-20);ctx.stroke();
+  ctx.fillStyle='#5a8aa6';
+  for(let v=Math.ceil(xm);v<=Math.floor(xM);v++){if(v!==0)ctx.fillText(v,sx(v)-3,sy(0)+14);}
+  for(let v=Math.ceil(ym);v<=Math.floor(yM);v++){if(v!==0)ctx.fillText(v,sx(0)+5,sy(v)+3);}
+  ctx.fillText('x',W-22,sy(0)-6);ctx.fillText('y',sx(0)+6,28);
+}
+
+// dibuja un punto relleno (incluido) o hueco (no incluido)
+function dot(px,py,filled,col){
+  ctx.lineWidth=2.5;ctx.strokeStyle=col;ctx.fillStyle=filled?col:'#0e2733';
+  ctx.beginPath();ctx.arc(px,py,5.5,0,7);ctx.fill();ctx.stroke();
+}
+
+function draw(){
+  let a=+A.value,x=+X.value;
+  document.getElementById('va').textContent=a;document.getElementById('vx').textContent=x.toFixed(1);
+  grid();
+  ctx.strokeStyle='#16BC59';ctx.lineWidth=3;
+  let msg='';
+
+  if(fn==='step'){
+    document.getElementById('eq').innerHTML='H(t−a) = 0 &nbsp;si&nbsp; t &lt; a &nbsp;&nbsp;|&nbsp;&nbsp; 1 &nbsp;si&nbsp; t ≥ a';
+    // tramo 0 (t<a)
+    ctx.beginPath();ctx.moveTo(sx(xm),sy(0));ctx.lineTo(sx(a),sy(0));ctx.stroke();
+    // tramo 1 (t>=a)
+    ctx.beginPath();ctx.moveTo(sx(a),sy(1));ctx.lineTo(sx(xM),sy(1));ctx.stroke();
+    // salto: hueco abajo (no incluye), relleno arriba (incluye)
+    dot(sx(a),sy(0),false,'#16BC59');
+    dot(sx(a),sy(1),true,'#16BC59');
+    const Li=0,Ld=1,val=x<a?0:1;
+    msg='Escalón de Heaviside en <b>a='+a+'</b>. Antes (t&lt;a) la salida es <b>0</b> (apagado); desde a vale <b>1</b> (encendido). '+
+        'En x=<b>'+x.toFixed(1)+'</b> la función vale <b>H='+val+'</b>. '+
+        'En el borde t=a: por <span class="izq">izquierda tiende a 0</span> y por <span class="der">derecha a 1</span> → no coinciden, hay <b>salto</b> y la función es <b>discontinua</b>.';
+  }
+  else if(fn==='floor'){
+    document.getElementById('eq').innerHTML='⌊x⌋ = mayor entero ≤ x &nbsp;(no redondea: ⌊2,9⌋ = 2)';
+    for(let n=Math.ceil(xm);n<Math.ceil(xM);n++){
+      ctx.beginPath();ctx.moveTo(sx(n),sy(n));ctx.lineTo(sx(Math.min(n+1,xM)),sy(n));ctx.stroke();
+      dot(sx(n),sy(n),true,'#16BC59');          // incluido en el extremo izquierdo
+      if(n+1<=xM) dot(sx(n+1),sy(n),false,'#16BC59'); // hueco a la derecha
+    }
+    const val=Math.floor(x);
+    msg='Parte entera (piso): cada peldaño es plano y salta de a 1 en cada entero. '+
+        '⌊<b>'+x.toFixed(1)+'</b>⌋ = <b>'+val+'</b>. '+(x<0&&x!==Math.floor(x)?'Ojo con los negativos: ⌊'+x.toFixed(1)+'⌋ = '+val+', NO '+(val+1)+'. ':'')+
+        'En cada entero hay un <b>salto</b>: por <span class="izq">izquierda</span> tiende al peldaño de abajo y por <span class="der">derecha</span> sube uno. Infinitas discontinuidades, una por entero.';
+  }
+  else{ // ramp
+    document.getElementById('eq').innerHTML='máx(0, x−a) = 0 &nbsp;si&nbsp; x ≤ a &nbsp;&nbsp;|&nbsp;&nbsp; x−a &nbsp;si&nbsp; x &gt; a';
+    ctx.beginPath();ctx.moveTo(sx(xm),sy(0));ctx.lineTo(sx(a),sy(0));ctx.stroke();
+    let xe=xM, ye=xM-a; if(ye>yM){ye=yM;xe=a+yM;}
+    ctx.beginPath();ctx.moveTo(sx(a),sy(0));ctx.lineTo(sx(xe),sy(ye));ctx.stroke();
+    dot(sx(a),sy(0),true,'#16BC59');
+    const val=Math.max(0,x-a);
+    msg='Rampa máx(0, x−a) con codo en <b>a='+a+'</b>: plana en 0 hasta a, después crece. '+
+        'En x=<b>'+x.toFixed(1)+'</b> vale <b>'+val.toFixed(1)+'</b>. '+
+        'Acá <b>no hay salto</b>: por <span class="izq">izquierda</span> y por <span class="der">derecha</span> tiende a 0, así que es <b>continua</b> (pero con un quiebre). Es la <b>ReLU</b> de las redes neuronales.';
+  }
+
+  // punto de prueba x sobre la curva
+  const yx=f(x,a);
+  ctx.setLineDash([3,3]);ctx.strokeStyle='#9fc4d6';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(sx(x),sy(0));ctx.lineTo(sx(x),sy(yx));ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='#eaf6ff';ctx.lineWidth=2.5;ctx.strokeStyle='#eaf6ff';
+  ctx.beginPath();ctx.arc(sx(x),sy(yx),5,0,7);ctx.fill();
+  ctx.fillStyle='#9fc4d6';ctx.font='11px system-ui';ctx.fillText('x',sx(x)-3,sy(0)+26);
+
+  document.getElementById('msg').innerHTML=msg;
+}
+
+function setFn(name,btn){
+  fn=name;
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('lab-a').style.display=(name==='floor')?'none':'block';
+  draw();
+}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>setFn(b.dataset.f,b));
+[A,X].forEach(s=>s.oninput=draw);
+draw();
+</script></body></html>

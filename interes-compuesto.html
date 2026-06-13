@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capitalización al infinito · el número e</title>
+<style>
+  :root { --curso:#005b7f; --verde:#16BC59; --tinta:#0b1f2a; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+         background:var(--tinta); color:#eaf6ff; padding:18px; }
+  .wrap { max-width:680px; margin:0 auto; }
+  h1 { font-size:1.25rem; margin:.4em 0 .2em; }
+  .sub { color:#9fc4d6; font-size:.9rem; margin:0 0 16px; }
+  .pill { display:inline-block; background:rgba(22,188,89,.15); color:var(--verde);
+          padding:.15em .6em; border-radius:999px; font-size:.8rem; font-weight:600; }
+  .big { font-size:2.6rem; font-weight:800; color:var(--verde); line-height:1; font-variant-numeric:tabular-nums; }
+  .row { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin:10px 0 4px; flex-wrap:wrap; }
+  input[type=range] { width:100%; accent-color:var(--verde); height:28px; }
+  canvas { width:100%; height:auto; background:#0e2733; border-radius:10px; display:block; margin:10px 0; }
+  .small { color:#9fc4d6; font-size:.85rem; }
+  .eq { font-family:ui-monospace,Menlo,monospace; font-size:1.05rem; text-align:center; color:#bfe3ff; margin:8px 0; word-break:break-word; }
+  .eq b { color:var(--verde); }
+  .msg { background:#13303f; border-left:4px solid var(--verde); padding:10px 14px; border-radius:8px; margin-top:12px; min-height:1.5em; }
+  b { color:var(--verde); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="pill">interactivo</span>
+  <h1>💰 Capitalización al infinito</h1>
+  <p class="sub">1 peso al 100% anual. Deslizá cuántas veces por año capitaliza el banco: el monto sube… pero se frena contra una línea, el número <b>e ≈ 2,71828</b>.</p>
+
+  <div class="row">
+    <span class="small">capitalizaciones por año n = <b id="vn">1</b></span>
+    <span class="small">falta para e: <b id="falta"></b></span>
+  </div>
+  <input id="s" type="range" min="0" max="100" value="0" aria-label="cantidad de capitalizaciones por año">
+
+  <div class="row"><span class="small">monto final = (1 + 1/n)<sup>n</sup></span></div>
+  <div class="big" id="v">2,00000</div>
+
+  <canvas id="c" width="660" height="320"></canvas>
+  <div class="eq" id="eq"></div>
+  <div class="msg" id="msg"></div>
+  <p class="small" style="margin-top:16px">Por más seguido que se capitalice, el monto <b>nunca pasa de e</b>: infinitas capitalizaciones NO dan infinita plata, dan un <i>límite</i>. Como Aquiles y la tortuga, un proceso infinito con resultado finito. Ese tope es el número que Euler llamó <b>e</b>, base del crecimiento exponencial.</p>
+</div>
+
+<script>
+  const E = Math.E; // 2.718281828...
+  const s = document.getElementById('s');
+  const c = document.getElementById('c'), ctx = c.getContext('2d'), W = c.width, H = c.height;
+  const fmt = (x,d=5) => x.toLocaleString('es-AR',{minimumFractionDigits:d,maximumFractionDigits:d});
+
+  // mapeo logarítmico del slider (0..100) a n (1..100000)
+  function sliderToN(p){ return Math.round(Math.pow(10, p/100*5)); } // 10^0=1 .. 10^5=100000
+
+  // escalas del gráfico: eje x = log10(n) en [0,5], eje y = monto en [2, e+ε]
+  const yMin = 1.95, yMax = 2.78;
+  const padL = 46, padR = 16, padT = 18, padB = 30;
+  const px = lx => padL + (lx/5)*(W-padL-padR);                 // lx = log10(n) en [0,5]
+  const py = v  => H-padB - (v-yMin)/(yMax-yMin)*(H-padT-padB);
+
+  function grid(){
+    ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle='#1d3d4d'; ctx.lineWidth=1; ctx.fillStyle='#5a8aa6'; ctx.font='11px system-ui';
+    // verticales: n = 1,10,100,1000,10000,100000
+    for(let k=0;k<=5;k++){
+      const x=px(k);
+      ctx.beginPath(); ctx.moveTo(x,padT); ctx.lineTo(x,H-padB); ctx.stroke();
+    }
+    const labels=['1','10','100','1k','10k','100k'];
+    for(let k=0;k<=5;k++){ ctx.fillText(labels[k], px(k)-(k===0?3:8), H-padB+14); }
+    // horizontales cada 0.1
+    ctx.textAlign='right';
+    for(let v=2.0; v<=2.75001; v+=0.1){
+      const y=py(v);
+      ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
+      ctx.fillText(v.toLocaleString('es-AR',{minimumFractionDigits:1,maximumFractionDigits:1}), padL-6, y+4);
+    }
+    ctx.textAlign='left';
+    // línea asíntota e
+    ctx.strokeStyle='#ffd166'; ctx.lineWidth=1.5; ctx.setLineDash([6,4]);
+    ctx.beginPath(); ctx.moveTo(padL,py(E)); ctx.lineTo(W-padR,py(E)); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#ffd166'; ctx.fillText('e ≈ 2,71828', padL+6, py(E)-6);
+  }
+
+  function curve(nMax){
+    // curva (1+1/n)^n para n=1..nMax, eje x logarítmico
+    ctx.strokeStyle='#16BC59'; ctx.lineWidth=3; ctx.beginPath();
+    let first=true;
+    const lxMax = Math.log10(nMax);
+    const steps = 240;
+    for(let i=0;i<=steps;i++){
+      const lx = lxMax*i/steps;
+      const n = Math.pow(10,lx);
+      const v = Math.pow(1+1/n, n);
+      const X=px(lx), Y=py(v);
+      if(first){ctx.moveTo(X,Y);first=false;} else ctx.lineTo(X,Y);
+    }
+    ctx.stroke();
+    // punto actual
+    const v = Math.pow(1+1/nMax, nMax);
+    ctx.fillStyle='#eaf6ff';
+    ctx.beginPath(); ctx.arc(px(lxMax), py(v), 5, 0, 7); ctx.fill();
+  }
+
+  function upd(){
+    const n = sliderToN(+s.value);
+    const v = Math.pow(1+1/n, n);
+    document.getElementById('vn').textContent = n.toLocaleString('es-AR');
+    document.getElementById('v').textContent = fmt(v);
+    document.getElementById('falta').textContent = fmt(E-v);
+    document.getElementById('eq').innerHTML = '(1 + 1/<b>'+n.toLocaleString('es-AR')+'</b>)<sup>'+n.toLocaleString('es-AR')+'</sup> = <b>'+fmt(v)+'</b>';
+    grid(); curve(n);
+
+    const m = document.getElementById('msg');
+    if(n===1) m.innerHTML = '1 cuota al 100%: terminás con <b>2</b>. El interés todavía no genera interés. Subí n y mirá qué pasa.';
+    else if(n<=12) m.innerHTML = 'Con <b>'+n+'</b> capitalizaciones llegás a <b>'+fmt(v,4)+'</b>. El interés del primer tramo también genera interés: por eso sube. '+(n===12?'(¡como los 12 meses!)':'');
+    else if(n<1000) m.innerHTML = 'Vas en <b>'+fmt(v,4)+'</b>. Cada capitalización extra aporta <b>cada vez menos</b>: la curva se aplana contra la línea amarilla.';
+    else if(n<100000) m.innerHTML = '🎯 Con <b>'+n.toLocaleString('es-AR')+'</b> capitalizaciones: <b>'+fmt(v)+'</b>. Casi pegado a <b>e</b>, pero falta apenas '+fmt(E-v)+'. Nunca lo pasa.';
+    else m.innerHTML = '∞ Capitalización <b>continua</b>: prácticamente <b>'+fmt(v)+' = e</b>. Infinitas veces NO te volvió infinitamente rico: el límite es e ≈ 2,71828. Eso descubrió Bernoulli en 1683.';
+  }
+  s.addEventListener('input', upd);
+  upd();
+</script>
+</body>
+</html>

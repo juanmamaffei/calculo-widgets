@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Eratóstenes mide la Tierra</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;--rojo:#e06b6b;--sol:#ffd166;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:680px;margin:0 auto}
+.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.25rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.9rem;margin:0 0 14px}
+canvas{width:100%;height:auto;background:#0e2733;border-radius:10px;display:block;margin:8px 0}
+label{font-size:.85rem;color:#9fc4d6;display:block}input[type=range]{width:100%;accent-color:var(--verde)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+button{background:#13303f;color:#eaf6ff;border:1px solid #26506a;border-radius:8px;padding:7px 12px;font-size:.82rem;cursor:pointer;font-family:inherit}
+button:hover{border-color:var(--verde)}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:6px 0}
+.stat{background:#0e2733;border-radius:8px;padding:8px;text-align:center;border:1px solid #1d3d4d}
+.stat .k{font-size:.7rem;color:#9fc4d6}.stat .v{font-family:ui-monospace,monospace;color:var(--sol);font-size:1.05rem}
+.eq{font-family:ui-monospace,monospace;font-size:1.05rem;text-align:center;color:var(--verde);margin:6px 0;line-height:1.5}
+.msg{background:#13303f;border-left:4px solid var(--verde);padding:10px 14px;border-radius:8px;margin-top:8px;font-size:.92rem;line-height:1.5}
+b{color:var(--verde)}.r{color:var(--sol)}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span><h1>🌍 Eratóstenes mide la Tierra</h1>
+<p class="sub">Con un palo y una sombra. El ángulo de la sombra en Alejandría es la fracción de la vuelta completa (360°) que la distancia entre ciudades representa de toda la circunferencia.</p>
+
+<canvas id="c" width="660" height="380"></canvas>
+
+<div class="btns">
+<button id="bera">📜 Datos de Eratóstenes (7,2°)</button>
+<button id="bflat">¿Y si la Tierra fuera plana?</button>
+</div>
+
+<div class="grid">
+<label>ángulo de la sombra θ = <b id="vth">7.2</b>°<input type="range" id="th" min="1" max="45" step="0.1" value="7.2"></label>
+<label>distancia Siena–Alejandría = <b id="vd">5000</b> estadios<input type="range" id="d" min="1000" max="9000" step="100" value="5000"></label>
+</div>
+
+<div class="stats">
+<div class="stat"><div class="k">θ es 1/n de 360°</div><div class="v" id="sn">1/50</div></div>
+<div class="stat"><div class="k">circunferencia</div><div class="v" id="sc">250000</div></div>
+<div class="stat"><div class="k">tan θ = sombra/altura</div><div class="v" id="st">0.126</div></div>
+</div>
+
+<div class="eq" id="eq"></div>
+<div class="msg" id="msg"></div>
+</div><script>
+(function(){
+const c=document.getElementById('c'),ctx=c.getContext('2d'),W=c.width,H=c.height;
+const TH=document.getElementById('th'),D=document.getElementById('d');
+const R=120, cx=W/2, cy=H/2+40; // Tierra
+let flat=false;
+
+function fmt(x,dec){return x.toLocaleString('es-AR',{maximumFractionDigits:dec,minimumFractionDigits:0});}
+
+function draw(){
+  const th=+TH.value, dist=+D.value;
+  const thr=th*Math.PI/180;
+  document.getElementById('vth').textContent=th.toLocaleString('es-AR');
+  document.getElementById('vd').textContent=fmt(dist,0);
+
+  ctx.clearRect(0,0,W,H);
+
+  // === rayos del Sol (paralelos, desde arriba a la derecha) ===
+  ctx.strokeStyle='rgba(255,209,102,.35)';ctx.lineWidth=1.5;
+  for(let i=0;i<14;i++){const x=40+i*46;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x-30,46);ctx.stroke();}
+  ctx.fillStyle='#ffd166';ctx.font='12px system-ui';
+  ctx.fillText('☀ rayos del Sol (paralelos)',16,62);
+
+  if(flat){
+    // === modelo Tierra plana: no hay diferencia de sombras ===
+    const gy=H-70;
+    ctx.strokeStyle='#5a8aa6';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(20,gy);ctx.lineTo(W-20,gy);ctx.stroke();
+    [{x:W*0.30,n:'Siena'},{x:W*0.70,n:'Alejandría'}].forEach(p=>{
+      // palo vertical
+      const ph=70;
+      ctx.strokeStyle='#eaf6ff';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(p.x,gy);ctx.lineTo(p.x,gy-ph);ctx.stroke();
+      // misma sombra en ambos (rayos llegan con mismo ángulo si es plana)
+      const sh=ph*Math.tan(7.2*Math.PI/180); // mismo ángulo arbitrario
+      ctx.strokeStyle='#26506a';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(p.x,gy);ctx.lineTo(p.x-sh,gy);ctx.stroke();
+      ctx.fillStyle='#9fc4d6';ctx.font='13px system-ui';ctx.fillText(p.n,p.x-26,gy+22);
+    });
+    document.getElementById('eq').innerHTML='Tierra plana ⟹ <span class="r">misma sombra</span> en las dos ciudades';
+    document.getElementById('msg').innerHTML='Si la Tierra fuera <b>plana</b>, los rayos del Sol (que son paralelos) pegarían con el <b>mismo ángulo</b> en todos lados: las dos sombras serían iguales. Pero Eratóstenes vio que en Siena <b>no había sombra</b> y en Alejandría <b>sí</b>. Esa diferencia solo se explica si la superficie es <b>curva</b>. Tocá «Datos de Eratóstenes» para medir el planeta.';
+    return;
+  }
+
+  // === Tierra (círculo) ===
+  ctx.strokeStyle='#1d3d4d';ctx.lineWidth=1;
+  ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.stroke();
+  ctx.fillStyle='rgba(0,91,127,.18)';ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.fill();
+  ctx.strokeStyle='#16BC59';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.stroke();
+  // centro
+  ctx.fillStyle='#5a8aa6';ctx.beginPath();ctx.arc(cx,cy,3,0,7);ctx.fill();
+
+  // Siena: el rayo cae a pico (vertical) -> en lo "alto" del círculo respecto al Sol.
+  // Tomamos a Siena en el tope (ángulo -90° desde el centro) y Alejandría girada θ.
+  const aS=-Math.PI/2;          // Siena arriba
+  const aA=-Math.PI/2-thr;      // Alejandría desplazada el ángulo central θ (mismo que la sombra)
+  const pS={x:cx+R*Math.cos(aS),y:cy+R*Math.sin(aS)};
+  const pA={x:cx+R*Math.cos(aA),y:cy+R*Math.sin(aA)};
+
+  // arco entre ciudades
+  ctx.strokeStyle='#ffd166';ctx.lineWidth=4;ctx.beginPath();ctx.arc(cx,cy,R,aA,aS);ctx.stroke();
+
+  // radios punteados al centro (para ver el ángulo central)
+  ctx.strokeStyle='#5a8aa6';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(pS.x,pS.y);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(pA.x,pA.y);ctx.stroke();
+  ctx.setLineDash([]);
+  // arco del ángulo central
+  ctx.strokeStyle='#ffd166';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(cx,cy,26,aA,aS);ctx.stroke();
+  ctx.fillStyle='#ffd166';ctx.font='bold 12px system-ui';ctx.fillText('θ='+th.toLocaleString('es-AR')+'°',cx-14,cy-30);
+
+  // dirección del Sol (a pico sobre Siena => rayo vertical hacia abajo en pS)
+  // los rayos son paralelos a la dirección Siena->centro (vertical)
+  const sunDir={x:0,y:1}; // hacia abajo en pantalla = rayo entrando
+
+  // --- obelisco en Siena: SIN sombra (rayo a pico) ---
+  drawStick(pS,aS,0,'Siena','sin sombra');
+  // --- obelisco en Alejandría: CON sombra de ángulo θ ---
+  drawStick(pA,aA,thr,'Alejandría','con sombra');
+
+  // === cálculo de la circunferencia ===
+  const n=360/th;
+  const circ=dist*n;
+  document.getElementById('sn').textContent='1/'+fmt(n,2);
+  document.getElementById('sc').textContent=fmt(circ,0);
+  document.getElementById('st').textContent=Math.tan(thr).toLocaleString('es-AR',{maximumFractionDigits:3});
+
+  document.getElementById('eq').innerHTML=
+    'C = '+fmt(dist,0)+' × <span class="r">'+fmt(n,2)+'</span> = <b>'+fmt(circ,0)+'</b> estadios &nbsp;·&nbsp; <span class="r">'+fmt(n,2)+' = 360°/'+th.toLocaleString('es-AR')+'°</span>';
+
+  const real=39941; const km=circ*0.1575; // 1 estadio ~157,5 m
+  document.getElementById('msg').innerHTML=
+    'El ángulo de la sombra en Alejandría es <b>θ='+th.toLocaleString('es-AR')+'°</b>, que es <b>1/'+fmt(n,2)+'</b> de la vuelta completa (360°). '+
+    'Como los rayos del Sol son <b>paralelos</b>, ese mismo ángulo es el <span class="r">ángulo central</span> entre las dos ciudades. '+
+    'Entonces el arco Siena–Alejandría ('+fmt(dist,0)+' estadios) es <b>1/'+fmt(n,2)+'</b> de toda la circunferencia: <br>'+
+    'C = '+fmt(dist,0)+' × '+fmt(n,2)+' = <b>'+fmt(circ,0)+' estadios</b> ≈ '+fmt(km,0)+' km. '+
+    '<br>La <span class="r">tangente</span> del ángulo del Sol es sombra/altura del obelisco: tan('+th.toLocaleString('es-AR')+'°)='+Math.tan(thr).toLocaleString('es-AR',{maximumFractionDigits:3})+'. '+
+    'Esa razón depende <b>solo del ángulo</b>, no del tamaño del palo: por eso un palo cualquiera alcanza para medir el planeta.';
+}
+
+// dibuja palito/obelisco en un punto del círculo, con sombra de ángulo "ang" respecto al palo
+function drawStick(p,radAngle,ang,name,note){
+  const len=34; // alto del obelisco
+  // normal hacia afuera (dirección del palo) = (cos,sin) del ángulo radial
+  const nx=Math.cos(radAngle),ny=Math.sin(radAngle);
+  const tip={x:p.x+nx*len,y:p.y+ny*len};
+  // base del palo
+  ctx.strokeStyle='#eaf6ff';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(tip.x,tip.y);ctx.stroke();
+  // punto ciudad
+  ctx.fillStyle='#16BC59';ctx.beginPath();ctx.arc(p.x,p.y,4,0,7);ctx.fill();
+  // sombra: tangente a la superficie, longitud = len*tan(ang)
+  // tangente (perpendicular a la normal), eligiendo sentido "hacia Siena"
+  const tx=-ny,ty=nx; // perpendicular
+  const shLen=len*Math.tan(ang);
+  if(shLen>0.5){
+    const sEnd={x:p.x+tx*shLen,y:p.y+ty*shLen};
+    ctx.strokeStyle='#26506a';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(sEnd.x,sEnd.y);ctx.stroke();
+    // hipotenusa (rayo) de la punta a la sombra: muestra el triángulo
+    ctx.strokeStyle='rgba(255,209,102,.7)';ctx.lineWidth=1.5;ctx.setLineDash([3,2]);
+    ctx.beginPath();ctx.moveTo(tip.x,tip.y);ctx.lineTo(sEnd.x,sEnd.y);ctx.stroke();ctx.setLineDash([]);
+  }
+  // etiqueta
+  ctx.fillStyle='#9fc4d6';ctx.font='12px system-ui';
+  const lx=tip.x+nx*8-18, ly=tip.y+ny*8;
+  ctx.fillText(name,lx,ly);
+  ctx.fillStyle=shLen>0.5?'#ffd166':'#16BC59';ctx.font='10px system-ui';
+  ctx.fillText(note,lx,ly+13);
+}
+
+document.getElementById('bera').onclick=()=>{flat=false;TH.value=7.2;D.value=5000;draw();};
+document.getElementById('bflat').onclick=()=>{flat=!flat;draw();};
+[TH,D].forEach(s=>s.oninput=()=>{flat=false;draw();});
+draw();
+})();
+</script></body></html>

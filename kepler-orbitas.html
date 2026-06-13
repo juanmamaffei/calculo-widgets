@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Las órbitas de Kepler</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;--sol:#ffd166;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:680px;margin:0 auto}
+.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.25rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.9rem;margin:0 0 14px}
+canvas{width:100%;height:auto;background:#0e2733;border-radius:10px;display:block;margin:8px 0}
+.eq{font-family:ui-monospace,monospace;font-size:1.05rem;text-align:center;color:var(--verde);margin:6px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0}
+label{font-size:.85rem;color:#9fc4d6}input[type=range]{width:100%;accent-color:var(--verde)}
+.btn{background:rgba(0,91,127,.45);color:#eaf6ff;border:1px solid #2e6c8a;border-radius:8px;padding:8px 12px;font-size:.85rem;font-weight:600;cursor:pointer}
+.btn:active{background:rgba(0,91,127,.8)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0 2px}
+.msg{background:#13303f;border-left:4px solid var(--verde);padding:10px 14px;border-radius:8px;margin-top:10px;font-size:.92rem;line-height:1.45}
+b{color:var(--verde)}.amar{color:var(--sol)}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span><h1>🪐 Las órbitas de Kepler</h1>
+<p class="sub">El planeta gira en una <b>elipse</b> con el Sol en un <span class="amar">foco</span>. En polares, su distancia al Sol es r(θ). Cambiá la excentricidad y mové el ángulo θ.</p>
+<div class="eq" id="eq"></div>
+<canvas id="c" width="660" height="360"></canvas>
+<div class="row">
+<button class="btn" id="play">▶︎ Animar</button>
+<label style="flex:1">ángulo θ = <b id="vt">0°</b><input type="range" id="t" min="0" max="360" value="0" step="1"></label>
+</div>
+<div class="grid">
+<label>excentricidad e = <b id="ve">0.50</b><input type="range" id="e" min="0" max="0.85" value="0.5" step="0.01"></label>
+<label><input type="checkbox" id="pol" checked> mostrar coordenadas polares (r, θ)</label>
+</div>
+<div class="msg" id="msg"></div>
+</div><script>
+const c=document.getElementById('c'),ctx=c.getContext('2d'),W=c.width,H=c.height;
+const T=document.getElementById('t'),E=document.getElementById('e'),POL=document.getElementById('pol'),PLAY=document.getElementById('play');
+const cx=W/2,cy=H/2,scale=120; // unidades: semilatus rectum p = 1 (radio "medio")
+let playing=false,raf=null;
+
+// Geometria de la elipse en polares con foco en el origen (Sol):
+//   r(θ) = p / (1 + e·cos θ),  p = semi-latus rectum (lo fijamos en 1)
+function rOf(th,e){return 1/(1+e*Math.cos(th));}
+// pantalla: el Sol (foco) se centra en el canvas; +x a la derecha, θ medido desde +x
+function px(r,th){return cx + r*Math.cos(th)*scale;}
+function py(r,th){return cy - r*Math.sin(th)*scale;}
+
+function draw(){
+  const e=+E.value, th=+T.value*Math.PI/180, polar=POL.checked;
+  document.getElementById('ve').textContent=e.toFixed(2);
+  document.getElementById('vt').textContent=Math.round(th*180/Math.PI)+'°';
+  document.getElementById('eq').textContent='r(θ) = 1 / (1 + '+e.toFixed(2)+'·cos θ)';
+  ctx.clearRect(0,0,W,H);
+
+  // estrellas de fondo
+  ctx.fillStyle='#16344450';
+  for(let i=0;i<40;i++){const sx=(i*97%W),sy=(i*53%H);ctx.fillRect(sx,sy,1.5,1.5);}
+
+  // ejes tenues
+  ctx.strokeStyle='#1d3d4d';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(20,cy);ctx.lineTo(W-20,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,20);ctx.lineTo(cx,H-20);ctx.stroke();
+
+  // la elipse completa
+  ctx.strokeStyle='#5a8aa6';ctx.lineWidth=2;ctx.beginPath();
+  for(let a=0;a<=360;a+=2){const aa=a*Math.PI/180,r=rOf(aa,e);
+    const X=px(r,aa),Y=py(r,aa);a===0?ctx.moveTo(X,Y):ctx.lineTo(X,Y);}
+  ctx.closePath();ctx.stroke();
+
+  // posicion actual del planeta
+  const r=rOf(th,e),Xp=px(r,th),Yp=py(r,th);
+
+  // radio-vector r (Sol -> planeta)
+  if(polar){
+    ctx.strokeStyle='#16BC59';ctx.lineWidth=2;ctx.setLineDash([5,4]);
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(Xp,Yp);ctx.stroke();ctx.setLineDash([]);
+    // arco del angulo
+    ctx.strokeStyle='#ffd166';ctx.lineWidth=2;ctx.beginPath();
+    ctx.arc(cx,cy,26,0,-th,th>0);ctx.stroke();
+    ctx.fillStyle='#ffd166';ctx.font='12px system-ui';ctx.fillText('θ',cx+30,cy-10);
+    ctx.fillStyle='#16BC59';ctx.fillText('r',(cx+Xp)/2+6,(cy+Yp)/2);
+  }
+
+  // el Sol en el foco
+  const g=ctx.createRadialGradient(cx,cy,2,cx,cy,16);
+  g.addColorStop(0,'#fff3c4');g.addColorStop(1,'#ffd16600');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,16,0,7);ctx.fill();
+  ctx.fillStyle='#ffd166';ctx.beginPath();ctx.arc(cx,cy,7,0,7);ctx.fill();
+  ctx.fillStyle='#9fc4d6';ctx.font='11px system-ui';ctx.fillText('Sol (foco)',cx+11,cy+22);
+
+  // el planeta
+  ctx.fillStyle='#16BC59';ctx.beginPath();ctx.arc(Xp,Yp,7,0,7);ctx.fill();
+  ctx.strokeStyle='#eaf6ff';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.fillStyle='#eaf6ff';ctx.fillText('planeta',Xp+10,Yp-8);
+
+  // mensaje pedagogico
+  const perih=rOf(0,e),afel=rOf(Math.PI,e);
+  let txt='En polares, la posición del planeta es <b>(r, θ)</b>: distancia al Sol y ángulo. '+
+          'Ahora r = <b>'+r.toFixed(2)+'</b> con θ = <b>'+Math.round(th*180/Math.PI)+'°</b>. '+
+          'En cartesianas eso es x = r·cos θ = <b>'+(r*Math.cos(th)).toFixed(2)+'</b>, y = r·sen θ = <b>'+(r*Math.sin(th)).toFixed(2)+'</b>.';
+  if(e<0.02){
+    txt+=' Con e≈0 la órbita es un <b>círculo</b>: r es constante. Es el caso que Kepler dio por hecho durante años… y que con Marte no cerraba.';
+  }else{
+    txt+=' Como e='+e.toFixed(2)+' &gt; 0 es una <b>elipse</b>: el planeta se acerca al Sol en el <span class="amar">perihelio</span> (r='+perih.toFixed(2)+', θ=0°) y se aleja en el <span class="amar">afelio</span> (r='+afel.toFixed(2)+', θ=180°). Esa fue la herejía de Kepler en 1609.';
+  }
+  document.getElementById('msg').innerHTML=txt;
+}
+
+function step(){
+  let v=+T.value+1.3; if(v>360)v-=360; T.value=v; draw();
+  if(playing)raf=requestAnimationFrame(step);
+}
+PLAY.onclick=()=>{playing=!playing;PLAY.textContent=playing?'⏸ Pausar':'▶︎ Animar';
+  if(playing)step();else if(raf)cancelAnimationFrame(raf);};
+[T,E,POL].forEach(s=>s.oninput=draw);
+draw();
+</script></body></html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>El cañón de Galileo</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:680px;margin:0 auto}.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.25rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.9rem;margin:0 0 14px}
+.eq{font-family:ui-monospace,monospace;font-size:1.05rem;text-align:center;color:var(--verde);margin:6px 0;line-height:1.5}
+canvas{width:100%;height:auto;background:#0e2733;border-radius:10px;display:block;margin:8px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}label{font-size:.85rem;color:#9fc4d6}input[type=range]{width:100%;accent-color:var(--verde)}
+.btn{background:var(--verde);color:#04231a;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;margin-top:10px}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:.85rem}
+.chip{background:#13303f;border:1px solid #26506a;border-radius:8px;padding:6px 10px}.chip b{display:block;font-size:1.05rem}
+.msg{background:#13303f;border-left:4px solid var(--verde);padding:10px 14px;border-radius:8px;margin-top:10px;font-size:.92rem;line-height:1.45}b{color:var(--verde)}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span><h1>💥 El cañón de Galileo</h1>
+<p class="sub">Avance parejo hacia adelante + caída acelerada = una <b>parábola</b>. Cambiá ángulo y velocidad: la trayectoria es el gráfico de una función cuadrática. ¿A qué ángulo llega más lejos?</p>
+<div class="eq" id="eq"></div>
+<canvas id="c" width="660" height="380"></canvas>
+<div class="grid">
+<label>ángulo θ = <b id="va">45</b>°<input type="range" id="ang" min="5" max="85" step="1" value="45"></label>
+<label>velocidad v₀ = <b id="vv">28</b> m/s<input type="range" id="vel" min="12" max="40" step="1" value="28"></label>
+</div>
+<button class="btn" id="play">▶ disparar</button>
+<div class="stats">
+<div class="chip">alcance<b id="sR">—</b></div>
+<div class="chip">altura máx<b id="sH">—</b></div>
+<div class="chip">vértice en x =<b id="sX">—</b></div>
+</div>
+<div class="msg" id="msg"></div>
+</div><script>
+const c=document.getElementById('c'),ctx=c.getContext('2d'),W=c.width,H=c.height;
+const A=document.getElementById('ang'),V=document.getElementById('vel');
+const g=9.8,pad=34;
+// escala fija al alcance máximo posible (45°, v máx) para que comparar ángulos tenga sentido
+const vmax=40, Xmax=vmax*vmax/g*1.02, Ymax=vmax*vmax/(2*g)*1.05;
+const px=x=>pad+x/Xmax*(W-2*pad), py=y=>H-pad-y/Ymax*(H-2*pad);
+function traj(ang,v0){const r=ang*Math.PI/180,c0=Math.cos(r),s=Math.sin(r);
+  const R=v0*v0*Math.sin(2*r)/g, hmax=v0*v0*s*s/(2*g), xv=R/2;
+  const a=-g/(2*v0*v0*c0*c0), b=Math.tan(r); // y = a x^2 + b x
+  return {R,hmax,xv,a,b,y:x=>a*x*x+b*x};}
+function grid(){ctx.clearRect(0,0,W,H);ctx.strokeStyle='#1d3d4d';ctx.lineWidth=1;
+  for(let x=0;x<=Xmax;x+=20){ctx.beginPath();ctx.moveTo(px(x),pad);ctx.lineTo(px(x),H-pad);ctx.stroke();}
+  for(let y=0;y<=Ymax;y+=10){ctx.beginPath();ctx.moveTo(pad,py(y));ctx.lineTo(W-pad,py(y));ctx.stroke();}
+  ctx.strokeStyle='#5a8aa6';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(pad,py(0));ctx.lineTo(W-pad,py(0));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(px(0),pad);ctx.lineTo(px(0),H-pad);ctx.stroke();
+  ctx.fillStyle='#9fc4d6';ctx.font='11px system-ui';ctx.fillText('distancia →',W-90,H-pad+18);ctx.save();ctx.translate(12,90);ctx.rotate(-Math.PI/2);ctx.fillText('altura ↑',0,0);ctx.restore();}
+let cur=null, prog=1;
+function render(){const ang=+A.value,v0=+V.value;const t=traj(ang,v0);cur=t;
+  document.getElementById('va').textContent=ang;document.getElementById('vv').textContent=v0;
+  grid();
+  // cañón
+  ctx.strokeStyle='#9fc4d6';ctx.lineWidth=6;const r=ang*Math.PI/180;ctx.beginPath();ctx.moveTo(px(0),py(0));ctx.lineTo(px(0)+Math.cos(r)*26,py(0)-Math.sin(r)*26);ctx.stroke();
+  // trayectoria parabólica (hasta prog del alcance)
+  const xend=t.R*prog;ctx.strokeStyle='#16BC59';ctx.lineWidth=3;ctx.beginPath();let first=true;
+  for(let x=0;x<=xend;x+=t.R/240+0.001){const yy=t.y(x);if(yy<-0.01)break;const X=px(x),Y=py(yy);if(first){ctx.moveTo(X,Y);first=false;}else ctx.lineTo(X,Y);}
+  ctx.stroke();
+  // vértice
+  if(t.xv<=xend){ctx.setLineDash([4,3]);ctx.strokeStyle='#ffd166';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(px(t.xv),py(0));ctx.lineTo(px(t.xv),py(t.hmax));ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#ffd166';ctx.beginPath();ctx.arc(px(t.xv),py(t.hmax),4,0,7);ctx.fill();ctx.font='11px system-ui';ctx.fillText('vértice',px(t.xv)+6,py(t.hmax)-6);}
+  // bala
+  const xb=xend,yb=Math.max(0,t.y(xb));ctx.fillStyle='#ffd166';ctx.beginPath();ctx.arc(px(xb),py(yb),7,0,7);ctx.fill();
+  // marca de alcance
+  if(prog>=1){ctx.fillStyle='#16BC59';ctx.beginPath();ctx.arc(px(t.R),py(0),4,0,7);ctx.fill();
+    ctx.fillStyle='#9fc4d6';ctx.font='11px system-ui';ctx.fillText(t.R.toFixed(1)+' m',px(t.R)-18,py(0)+18);}
+  // textos
+  document.getElementById('sR').textContent=t.R.toFixed(1)+' m';
+  document.getElementById('sH').textContent=t.hmax.toFixed(1)+' m';
+  document.getElementById('sX').textContent=t.xv.toFixed(1)+' m';
+  document.getElementById('eq').innerHTML='y = '+t.a.toFixed(3)+'·x² + '+t.b.toFixed(2)+'·x &nbsp;(a&lt;0 → abre hacia abajo → máximo)';
+  let m;const ang_=+A.value;
+  if(ang_===45) m='¡<b>45°</b>! Acá el alcance es <b>máximo</b>. Encontrar este ángulo no es probar y probar: es hallar el <b>vértice</b> de la función alcance R(θ) = v₀²·sen(2θ)/g. La primera vez que la matemática responde «¿cuál es el mejor?».';
+  else{const comp=90-ang_;const tc=traj(comp,v0);
+    m='El tiro es una <b>parábola</b>: y = a·x²+b·x con a&lt;0. Su <b>vértice</b> (x=−b/2a='+t.xv.toFixed(1)+' m) es la altura máxima. Más cerca de <b>45°</b>, más lejos llega. Notá: a <b>'+ang_+'°</b> y a <b>'+comp+'°</b> el alcance es el mismo ('+t.R.toFixed(1)+' m) — son ángulos complementarios.';}
+  document.getElementById('msg').innerHTML=m;}
+[A,V].forEach(s=>s.oninput=()=>{prog=1;render();});
+let raf;document.getElementById('play').onclick=()=>{if(raf){cancelAnimationFrame(raf);raf=null;}prog=0;
+  (function step(){prog+=0.02;if(prog>=1){prog=1;render();raf=null;return;}render();raf=requestAnimationFrame(step);})();};
+prog=1;render();
+</script></body></html>
