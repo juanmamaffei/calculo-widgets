@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>El mapa del año · Cálculo I</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;--card:#13303f;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:760px;margin:0 auto}.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.3rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.92rem;margin:0 0 8px}
+.zen{background:linear-gradient(135deg,#005b7f,#16BC59);border-radius:14px;padding:14px 18px;margin:14px 0;font-weight:600}
+.zen small{display:block;font-weight:400;opacity:.9;margin-top:4px;font-size:.85rem}
+.eje{background:var(--card);border-radius:12px;margin:10px 0;overflow:hidden;border:1px solid #26506a}
+.eje>button{width:100%;text-align:left;background:none;border:0;color:#eaf6ff;padding:14px 16px;font-size:1rem;font-weight:700;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.eje .num{display:inline-block;background:var(--verde);color:#04231a;border-radius:8px;padding:.1em .5em;font-size:.8rem;margin-right:8px}
+.clases{max-height:0;overflow:hidden;transition:max-height .35s ease}
+.clases.open{max-height:600px}
+.clase{display:flex;gap:10px;padding:9px 16px 9px 18px;border-top:1px solid #1d3d4d;font-size:.9rem;align-items:baseline}
+.clase b{color:var(--verde);min-width:58px}
+.clase em{color:#9fc4d6;font-style:normal;font-size:.82rem}
+.arc{color:#ffd166}
+</style></head><body><div class="wrap">
+<span class="pill">el mapa del año</span><h1>Un año contado como una historia</h1>
+<p class="sub">Cada clase abre con una historia real; la matemática aparece como su respuesta. Tocá cada eje.</p>
+<div class="zen">❓ La pregunta que queda escrita todo el año: ½ + ¼ + ⅛ + … = ?
+<small>Se abre con la paradoja de Zenón (Clase 1) y se resuelve, con rigor, al formalizar el límite (Clase 17). 24 siglos en un año.</small></div>
+<div id="ejes"></div>
+</div><script>
+const EJES=[
+ {id:'I',n:'Números reales',cls:[[1,'La paradoja de Aquiles','suma infinita · registros',1],[2,'El Hotel de Hilbert','cardinalidad · numerabilidad'],[3,'El crimen de Hipaso','irracionalidad de √2'],[4,'¿Qué significa estar cerca?','intervalos · entornos']]},
+ {id:'II',n:'Funciones',cls:[[5,'Galileo en la Torre de Pisa','relaciones y funciones'],[6,'La máquina de Euler','notación f(x) · dominio'],[7,'Una llave, una cerradura','iny/sobre/biyectividad'],[8,'El código César','composición · inversa'],[9,'La línea recta','función lineal y afín']]},
+ {id:'III',n:'Trigonometría',cls:[[10,'Eratóstenes mide la Tierra','razones trigonométricas'],[11,'Los navegantes y la ley del coseno','teoremas seno/coseno'],[12,'Las órbitas de Kepler','funciones trig · polares']]},
+ {id:'IV',n:'Estudio de funciones',cls:[[13,'El cañón de Galileo','cuadrática · parábola'],[14,'Bernoulli y el interés compuesto','exponencial · el número e'],[15,'Fourier y el sonido','trig como modelo'],[16,'Heaviside y el interruptor','funciones especiales']]},
+ {id:'V',n:'Límites',cls:[[17,'Volvemos a Aquiles','límite · serie geométrica',1],[18,'La curva que nunca llega','asíntotas'],[19,'El cierre del año','½+¼+⅛=1 · síntesis',1]]},
+];
+const cont=document.getElementById('ejes');
+EJES.forEach((e,i)=>{const d=document.createElement('div');d.className='eje';
+ d.innerHTML=`<button><span><span class="num">Eje ${e.id}</span>${e.n}</span><span>＋</span></button><div class="clases">`+
+ e.cls.map(c=>`<div class="clase"><b>Clase ${c[0]}</b><span>${c[1]} ${c[3]?'<span class="arc">★ arco Zenón</span>':''}<br><em>${c[2]}</em></span></div>`).join('')+`</div>`;
+ cont.appendChild(d);
+ const btn=d.querySelector('button'),body=d.querySelector('.clases');
+ btn.onclick=()=>{const open=body.classList.contains('open');document.querySelectorAll('.clases').forEach(x=>x.classList.remove('open'));document.querySelectorAll('.eje button span:last-child').forEach(x=>x.textContent='＋');if(!open){body.classList.add('open');btn.querySelector('span:last-child').textContent='－';}};
+ if(i===0){body.classList.add('open');btn.querySelector('span:last-child').textContent='－';}
+});
+</script></body></html>

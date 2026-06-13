@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>¿Para qué cálculo en la era de la IA?</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;--card:#13303f;--ia:#e0a85e;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:760px;margin:0 auto}.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.3rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.92rem;margin:0 0 12px}
+.tl{position:relative;margin:18px 0;padding-left:22px;border-left:2px solid #26506a}
+.tl .dot{position:relative;margin:0 0 16px}
+.tl .dot::before{content:'';position:absolute;left:-29px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--verde)}
+.tl .yr{font-weight:800;color:var(--verde)}.tl .d{font-size:.9rem;color:#cfe6f2}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+@media(max-width:520px){.cols{grid-template-columns:1fr}}
+.col{border-radius:12px;padding:14px 16px}
+.col.ia{background:rgba(224,168,94,.12);border:1px solid var(--ia)}
+.col.vos{background:rgba(22,188,89,.12);border:1px solid var(--verde)}
+.col h3{margin:.1em 0 .5em;font-size:1rem}.col.ia h3{color:var(--ia)}.col.vos h3{color:var(--verde)}
+.col li{font-size:.88rem;margin:5px 0}
+.flip{background:var(--card);border-radius:12px;padding:16px;margin-top:8px}
+.flip .q{font-weight:700}.flip .a{display:none;margin-top:8px;color:#cfe6f2;font-size:.92rem}.flip.open .a{display:block}
+.flip button{margin-top:8px;background:var(--verde);color:#04231a;border:0;border-radius:8px;padding:7px 14px;font-weight:700;cursor:pointer}
+</style></head><body><div class="wrap">
+<span class="pill">por qué importa</span><h1>¿Para qué aprender cálculo si la máquina ya calcula?</h1>
+<p class="sub">Vos vas a enseñar matemática durante unas tres décadas. Pensemos para qué mundo.</p>
+<div class="tl">
+ <div class="dot"><span class="yr">2025</span> <span class="d">— cursás este primer año.</span></div>
+ <div class="dot"><span class="yr">~2030</span> <span class="d">— te recibís y empezás a dar clases en secundaria.</span></div>
+ <div class="dot"><span class="yr">2030–2065</span> <span class="d">— enseñás a chicos que vivirán un mundo que hoy no podemos predecir.</span></div>
+</div>
+<p class="sub">Una máquina ya deriva, integra, grafica y produce "demostraciones" plausibles a pedido. Entonces, ¿qué del cálculo conserva valor formativo?</p>
+<div class="cols">
+ <div class="col ia"><h3>🤖 Lo que delega la máquina</h3><ul>
+  <li>Ejecutar algoritmos</li><li>Operar y simplificar</li><li>Graficar</li><li>Producir texto plausible (¡a veces falso!)</li></ul></div>
+ <div class="col vos"><h3>🧠 Lo que es tuyo (y vas a enseñar)</h3><ul>
+  <li>Conceptualizar la variación</li><li>Modelizar problemas reales</li><li>Coordinar representaciones</li><li><b>Validar</b> y argumentar — incluso auditar a la IA</li></ul></div>
+</div>
+<div class="flip" id="flip">
+ <div class="q">💡 La idea clave de este espacio</div>
+ <div class="a">No venís a competir con la calculadora. Venís a formarte como quien <b>entiende, decide y valida</b>: la persona que distingue una respuesta correcta de una plausible-pero-falsa, y que puede enseñar a otros a hacerlo. Eso no se automatiza.</div>
+ <button id="b">Mostrar</button>
+</div>
+<script>const f=document.getElementById('flip'),b=document.getElementById('b');b.onclick=()=>{f.classList.toggle('open');b.textContent=f.classList.contains('open')?'Ocultar':'Mostrar';};</script>
+</div></body></html>
