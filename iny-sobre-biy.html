@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inyectiva, sobreyectiva, biyectiva</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;--rojo:#e06b6b;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:680px;margin:0 auto}.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.25rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.9rem;margin:0 0 14px}
+canvas{width:100%;height:auto;background:#0e2733;border-radius:10px;display:block;margin:8px 0}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.btn{background:#13303f;color:#eaf6ff;border:1px solid #26506a;border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer}
+.btn.on{background:var(--verde);color:#04231a;border-color:var(--verde)}
+.msg{background:#13303f;border-left:4px solid var(--verde);padding:10px 14px;border-radius:8px;margin-top:8px}b{color:var(--verde)}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span><h1>🔑 Llaves y cerraduras</h1>
+<p class="sub">A cada llave (A) le asignamos una cerradura (B). Mirá cómo cambia el tipo de función.</p>
+<canvas id="c" width="660" height="280"></canvas>
+<div class="btns">
+<button class="btn on" data-k="iny">Inyectiva</button>
+<button class="btn" data-k="sobre">Sobreyectiva</button>
+<button class="btn" data-k="biy">Biyectiva</button>
+<button class="btn" data-k="no">Ninguna</button>
+</div>
+<div class="msg" id="msg"></div>
+</div><script>
+const c=document.getElementById('c'),ctx=c.getContext('2d'),W=c.width,H=c.height;
+const maps={
+ iny:{A:['a','b','c'],B:['1','2','3','4'],f:{a:'1',b:'3',c:'4'},txt:'<b>Inyectiva</b>: llaves distintas → cerraduras distintas, pero sobra la 2 (no es sobreyectiva).'},
+ sobre:{A:['a','b','c','d'],B:['1','2','3'],f:{a:'1',b:'2',c:'3',d:'3'},txt:'<b>Sobreyectiva</b>: toda cerradura tiene llave, pero c y d comparten la 3 (no es inyectiva).'},
+ biy:{A:['a','b','c'],B:['1','2','3'],f:{a:'2',b:'1',c:'3'},txt:'<b>Biyectiva</b>: emparejamiento perfecto. Inyectiva + sobreyectiva → tiene <b>inversa</b>.'},
+ no:{A:['a','b','c'],B:['1','2','3'],f:{a:'1',b:'1',c:'2'},txt:'<b>Ni inyectiva ni sobreyectiva</b>: a y b van a la 1, y la 3 queda sin llave.'}
+};
+function draw(k){const m=maps[k];ctx.clearRect(0,0,W,H);const xa=160,xb=500;
+function col(arr,x,lbl,used){ctx.fillStyle='#9fc4d6';ctx.font='13px system-ui';ctx.fillText(lbl,x-10,30);arr.forEach((e,i)=>{const y=70+i*55;const on=used?used.has(e):true;ctx.fillStyle=on?'#13303f':'#13303f';ctx.strokeStyle=on?'#16BC59':'#e06b6b';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,20,0,7);ctx.fill();ctx.stroke();ctx.fillStyle='#eaf6ff';ctx.font='15px system-ui';ctx.fillText(e,x-5,y+5);});}
+const usedB=new Set(Object.values(m.f));
+col(m.A,xa,'A (llaves)');col(m.B,xb,'B (cerraduras)',usedB);
+ctx.strokeStyle='#ffd166';ctx.lineWidth=2;m.A.forEach((a,i)=>{const ya=70+i*55,j=m.B.indexOf(m.f[a]),yb=70+j*55;ctx.beginPath();ctx.moveTo(xa+20,ya);ctx.lineTo(xb-20,yb);ctx.stroke();});
+document.getElementById('msg').innerHTML=m.txt;
+document.querySelectorAll('.btn').forEach(b=>b.classList.toggle('on',b.dataset.k===k));}
+document.querySelectorAll('.btn').forEach(b=>b.onclick=()=>draw(b.dataset.k));draw('iny');
+</script></body></html>

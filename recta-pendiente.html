@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>La línea recta</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:680px;margin:0 auto}.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.25rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.9rem;margin:0 0 14px}
+canvas{width:100%;height:auto;background:#0e2733;border-radius:10px;display:block;margin:8px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}label{font-size:.85rem;color:#9fc4d6}input[type=range]{width:100%;accent-color:var(--verde)}
+.eq{font-family:ui-monospace,monospace;font-size:1.3rem;text-align:center;color:var(--verde);margin:6px 0}
+.msg{background:#13303f;border-left:4px solid var(--verde);padding:10px 14px;border-radius:8px;margin-top:8px}b{color:var(--verde)}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span><h1>📈 La línea recta</h1>
+<p class="sub">y = m·x + b. La pendiente m es el cociente incremental Δy/Δx; b es dónde corta el eje y.</p>
+<div class="eq" id="eq">y = 1·x + 0</div>
+<canvas id="c" width="660" height="360"></canvas>
+<div class="grid">
+<label>pendiente m = <b id="vm">1</b><input type="range" id="m" min="-3" max="3" step="0.25" value="1"></label>
+<label>ordenada b = <b id="vb">0</b><input type="range" id="b" min="-5" max="5" step="0.5" value="0"></label>
+</div>
+<div class="msg" id="msg"></div>
+</div><script>
+const c=document.getElementById('c'),ctx=c.getContext('2d'),W=c.width,H=c.height,M=document.getElementById('m'),B=document.getElementById('b');
+const m0=-7,m1=7;const sx=v=>30+(v-m0)/(m1-m0)*(W-60),sy=v=>H-30-(v-m0)/(m1-m0)*(H-60);
+function grid(){ctx.clearRect(0,0,W,H);ctx.strokeStyle='#1d3d4d';ctx.lineWidth=1;for(let v=m0;v<=m1;v++){ctx.beginPath();ctx.moveTo(sx(v),20);ctx.lineTo(sx(v),H-20);ctx.stroke();ctx.beginPath();ctx.moveTo(20,sy(v));ctx.lineTo(W-20,sy(v));ctx.stroke();}ctx.strokeStyle='#5a8aa6';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(20,sy(0));ctx.lineTo(W-20,sy(0));ctx.stroke();ctx.beginPath();ctx.moveTo(sx(0),20);ctx.lineTo(sx(0),H-20);ctx.stroke();}
+function draw(){const m=+M.value,b=+B.value;document.getElementById('vm').textContent=m;document.getElementById('vb').textContent=b;document.getElementById('eq').textContent='y = '+m+'·x + '+b;grid();
+ctx.strokeStyle='#16BC59';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(sx(m0),sy(m*m0+b));ctx.lineTo(sx(m1),sy(m*m1+b));ctx.stroke();
+// triangulo de pendiente entre x=0 y x=1
+const x0=0,x1=1,y0=b,y1=m+b;ctx.strokeStyle='#ffd166';ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(sx(x0),sy(y0));ctx.lineTo(sx(x1),sy(y0));ctx.lineTo(sx(x1),sy(y1));ctx.stroke();ctx.setLineDash([]);
+ctx.fillStyle='#ffd166';ctx.font='12px system-ui';ctx.fillText('Δx=1',sx(0.4),sy(y0)+16);ctx.fillText('Δy='+m,sx(1)+6,sy((y0+y1)/2));
+ctx.fillStyle='#16BC59';ctx.beginPath();ctx.arc(sx(0),sy(b),5,0,7);ctx.fill();ctx.fillText('b='+b,sx(0)+8,sy(b)-8);
+document.getElementById('msg').innerHTML='Pendiente m = <b>'+m+'</b>: por cada paso de Δx=1, y cambia <b>'+m+'</b> (Δy/Δx). Corta el eje y en <b>b='+b+'</b>. '+(b===0?'Como b=0, es <b>lineal</b> (pasa por el origen).':'Como b≠0, es <b>afín</b>.');}
+[M,B].forEach(s=>s.oninput=draw);draw();
+</script></body></html>

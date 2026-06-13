@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>La máquina f(x)</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;--rojo:#e06b6b;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:680px;margin:0 auto}.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.25rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.9rem;margin:0 0 14px}
+.machine{display:flex;align-items:center;justify-content:center;gap:14px;margin:16px 0;flex-wrap:wrap}
+.box{background:linear-gradient(135deg,var(--curso),var(--verde));border-radius:14px;padding:18px 24px;font-size:1.3rem;font-weight:800;font-family:ui-monospace,monospace}
+.val{background:#13303f;border:1px solid #26506a;border-radius:12px;padding:14px 20px;text-align:center;min-width:90px}
+.val b{font-size:1.6rem;color:var(--verde);display:block}.val span{font-size:.75rem;color:#9fc4d6}
+.arrow{font-size:1.6rem;color:#9fc4d6}
+label{font-size:.85rem;color:#9fc4d6}input[type=range]{width:100%;accent-color:var(--verde)}
+select{background:#0e2733;color:#eaf6ff;border:1px solid #26506a;border-radius:6px;padding:6px}
+.msg{background:#13303f;border-left:4px solid var(--verde);padding:10px 14px;border-radius:8px;margin-top:10px}b{color:var(--verde)}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span><h1>⚙️ La máquina f(x)</h1>
+<p class="sub">Una función es una máquina: metés un x, sale un único f(x). Elegí la regla y movó la entrada.</p>
+<p><label>regla: <select id="f"><option value="lin">f(x) = 2x + 1</option><option value="cuad">f(x) = x²</option><option value="inv">f(x) = 1/x</option></select></label></p>
+<div class="machine">
+<div class="val"><b id="x">2</b><span>entrada x</span></div>
+<span class="arrow">→</span><div class="box" id="rule">f</div><span class="arrow">→</span>
+<div class="val"><b id="y">5</b><span>salida f(x)</span></div>
+</div>
+<label>x = <b id="vx">2</b><input type="range" id="s" min="-5" max="5" step="0.5" value="2"></label>
+<div class="msg" id="msg"></div>
+</div><script>
+const S=document.getElementById('s'),F=document.getElementById('f');
+const defs={lin:{f:x=>2*x+1,t:'f(x) = 2x + 1',dom:'todos los reales',img:'todos los reales'},cuad:{f:x=>x*x,t:'f(x) = x²',dom:'todos los reales',img:'y ≥ 0'},inv:{f:x=>1/x,t:'f(x) = 1/x',dom:'x ≠ 0',img:'y ≠ 0'}};
+function upd(){const x=+S.value,d=defs[F.value];document.getElementById('rule').textContent=d.t.replace('f(x) = ','');document.getElementById('vx').textContent=x;document.getElementById('x').textContent=x;
+let y=d.f(x);const bad=(F.value==='inv'&&x===0);document.getElementById('y').textContent=bad?'∄':(Math.round(y*1000)/1000);
+document.getElementById('msg').innerHTML=bad?'<b style="color:#e06b6b">x = 0 no está en el dominio</b> de 1/x: no se puede dividir por cero.':'Para x = '+x+', la máquina devuelve <b>'+d.t.split('= ')[1].replace('x','('+x+')')+' = '+(Math.round(y*1000)/1000)+'</b>. Dominio: '+d.dom+'. Imagen: '+d.img+'.';}
+S.oninput=upd;F.onchange=upd;upd();
+</script></body></html>

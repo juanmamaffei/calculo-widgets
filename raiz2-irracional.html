@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>√2 es irracional</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;--rojo:#e06b6b;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:680px;margin:0 auto}.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.25rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.9rem;margin:0 0 14px}
+.row{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:10px 0}
+label{font-size:.85rem;color:#9fc4d6}input[type=number]{width:80px;background:#0e2733;color:#eaf6ff;border:1px solid #26506a;border-radius:6px;padding:6px}
+.big{font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums}
+.ok{color:var(--verde)}.no{color:var(--rojo)}
+.bar{height:10px;background:#13303f;border-radius:5px;overflow:hidden;margin-top:6px}.bar>div{height:100%;background:var(--verde)}
+.dec{font-family:ui-monospace,monospace;background:#13303f;padding:10px 14px;border-radius:8px;word-break:break-all;margin:10px 0;color:#bfe3ff}
+.msg{background:#13303f;border-left:4px solid var(--verde);padding:10px 14px;border-radius:8px;margin-top:10px}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span><h1>🔺 ¿Existe una fracción que sea √2?</h1>
+<p class="sub">√2 es la diagonal de un cuadrado de lado 1. Buscá una fracción p/q que dé exactamente 2 al elevarse al cuadrado.</p>
+<div class="row">
+<label>p <input type="number" id="p" value="7" min="1"></label>
+<label>q <input type="number" id="q" value="5" min="1"></label>
+<span>→ (p/q)² = <b class="big" id="sq">1.96</b></span>
+</div>
+<div class="bar"><div id="bar"></div></div>
+<div class="dec" id="dec">√2 = 1.4142135623730951…</div>
+<div class="msg" id="msg"></div>
+</div><script>
+const p=document.getElementById('p'),q=document.getElementById('q'),sq=document.getElementById('sq'),bar=document.getElementById('bar'),msg=document.getElementById('msg');
+function upd(){const P=+p.value||1,Q=+q.value||1,val=(P/P? (P*P)/(Q*Q):0);sq.textContent=val.toFixed(6);const diff=Math.abs(val-2);bar.style.width=Math.max(0,100-diff*100)+'%';sq.className='big '+(diff<1e-9?'ok':'no');
+if(diff<1e-9)msg.innerHTML='Imposible: <b>nunca</b> vas a encontrar p/q exacto. Eso es justamente lo que prueba que √2 es <b>irracional</b> (reducción al absurdo: si p/q fuera irreducible, p y q tendrían que ser ambos pares).';
+else msg.innerHTML='(p/q)² = '+val.toFixed(6)+', te falta '+(val<2?'subir':'bajar')+' para llegar a 2. Probá otra… pero <b>ninguna fracción lo logra exactamente</b>.';}
+p.oninput=upd;q.oninput=upd;upd();
+</script></body></html>

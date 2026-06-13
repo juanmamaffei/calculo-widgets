@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>El código César</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:680px;margin:0 auto}.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.25rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.9rem;margin:0 0 14px}
+input[type=text]{width:100%;background:#0e2733;color:#eaf6ff;border:1px solid #26506a;border-radius:8px;padding:10px;font-size:1rem}
+input[type=range]{width:100%;accent-color:var(--verde)}label{font-size:.85rem;color:#9fc4d6}
+.out{background:#13303f;border-radius:10px;padding:12px 14px;margin:8px 0;font-family:ui-monospace,monospace;font-size:1.1rem;letter-spacing:1px;word-break:break-all}
+.out b{color:var(--verde)}.tag{font-size:.75rem;color:#9fc4d6;display:block;margin-bottom:4px}
+.msg{background:#13303f;border-left:4px solid var(--verde);padding:10px 14px;border-radius:8px;margin-top:10px}b{color:var(--verde)}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span><h1>🔐 El código César</h1>
+<p class="sub">Cifrar = correr cada letra k lugares (función f). Descifrar = correr −k (la inversa f⁻¹). Componer f⁻¹∘f devuelve el original.</p>
+<label>mensaje</label><input type="text" id="txt" value="ARQUIMEDES" maxlength="40">
+<label style="margin-top:10px;display:block">desplazamiento k = <b id="vk">3</b><input type="range" id="k" min="1" max="25" value="3"></label>
+<div class="out"><span class="tag">f(x): cifrado (+k)</span><b id="enc"></b></div>
+<div class="out"><span class="tag">f⁻¹(f(x)): descifrado (−k) → vuelve al original</span><b id="dec"></b></div>
+<div class="msg" id="msg"></div>
+</div><script>
+const T=document.getElementById('txt'),K=document.getElementById('k');
+function shift(s,k){return s.toUpperCase().replace(/[A-Z]/g,c=>String.fromCharCode((c.charCodeAt(0)-65+k+26)%26+65));}
+function upd(){const k=+K.value,s=T.value;document.getElementById('vk').textContent=k;const e=shift(s,k);document.getElementById('enc').textContent=e;document.getElementById('dec').textContent=shift(e,-k);
+document.getElementById('msg').innerHTML='Cifrar y luego descifrar es <b>componer una función con su inversa</b>: f⁻¹∘f = identidad. Por eso recuperás el mensaje exacto.';}
+T.oninput=upd;K.oninput=upd;upd();
+</script></body></html>

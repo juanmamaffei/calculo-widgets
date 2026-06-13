@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Entornos y valor absoluto</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;--rojo:#e06b6b;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:680px;margin:0 auto}.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.25rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.9rem;margin:0 0 14px}
+canvas{width:100%;height:auto;background:#0e2733;border-radius:10px;display:block;margin:8px 0}
+label{font-size:.85rem;color:#9fc4d6}input[type=range]{width:100%;accent-color:var(--verde)}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:6px 0}
+.msg{background:#13303f;border-left:4px solid var(--verde);padding:10px 14px;border-radius:8px;margin-top:10px}
+b{color:var(--verde)}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span><h1>📏 ¿Qué significa "estar cerca"?</h1>
+<p class="sub">El entorno de centro a y radio ε son los x con |x − a| &lt; ε. Movés a, ε y el punto x.</p>
+<canvas id="c" width="660" height="140"></canvas>
+<div class="grid">
+<label>centro a: <b id="va">3</b><input type="range" id="a" min="-10" max="10" value="3" step="0.5"></label>
+<label>radio ε: <b id="ve">2</b><input type="range" id="e" min="0.5" max="6" value="2" step="0.5"></label>
+<label>punto x: <b id="vx">5</b><input type="range" id="x" min="-10" max="10" value="5" step="0.5"></label>
+</div>
+<div class="msg" id="msg"></div>
+</div><script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+const A=document.getElementById('a'),E=document.getElementById('e'),X=document.getElementById('x');
+const W=c.width,H=c.height,m=-10,M=10;const px=v=>30+(v-m)/(M-m)*(W-60);
+function draw(){const a=+A.value,e=+E.value,x=+X.value;document.getElementById('va').textContent=a;document.getElementById('ve').textContent=e;document.getElementById('vx').textContent=x;
+ctx.clearRect(0,0,W,H);
+ctx.fillStyle='rgba(22,188,89,.22)';ctx.fillRect(px(a-e),50,px(a+e)-px(a-e),26);
+ctx.strokeStyle='#26506a';ctx.beginPath();ctx.moveTo(20,63);ctx.lineTo(W-20,63);ctx.stroke();
+for(let v=m;v<=M;v+=1){const X0=px(v);ctx.strokeStyle='#26506a';ctx.beginPath();ctx.moveTo(X0,59);ctx.lineTo(X0,67);ctx.stroke();ctx.fillStyle='#5a8aa6';ctx.font='10px system-ui';ctx.fillText(v,X0-4,84);}
+[[a-e,'#16BC59'],[a+e,'#16BC59']].forEach(([v,col])=>{ctx.strokeStyle=col;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(px(v),40);ctx.lineTo(px(v),76);ctx.stroke();ctx.setLineDash([]);});
+ctx.fillStyle='#ffd166';ctx.beginPath();ctx.arc(px(a),63,6,0,7);ctx.fill();ctx.fillText('a',px(a)-3,38);
+const dist=Math.abs(x-a),inside=dist<e;ctx.fillStyle=inside?'#16BC59':'#e06b6b';ctx.beginPath();ctx.arc(px(x),63,7,0,7);ctx.fill();ctx.fillStyle='#eaf6ff';ctx.fillText('x',px(x)-3,104);
+document.getElementById('msg').innerHTML='|x − a| = |'+x+' − '+a+'| = <b>'+dist+'</b>'+(inside?' &lt; ':' ≥ ')+'ε='+e+' → x '+(inside?'<b>está en el entorno</b> ('+(a-e)+', '+(a+e)+')':'<b style="color:#e06b6b">queda afuera</b>');}
+[A,E,X].forEach(s=>s.oninput=draw);draw();
+</script></body></html>
