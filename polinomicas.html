@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Funciones polinómicas</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:680px;margin:0 auto}.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.25rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.9rem;margin:0 0 14px}
+canvas{width:100%;height:auto;background:#0e2733;border-radius:10px;display:block;margin:8px 0;touch-action:none}
+.eq{font-family:ui-monospace,monospace;font-size:1.05rem;text-align:center;color:var(--verde);margin:6px 0;line-height:1.5;word-break:break-word}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0}
+label{font-size:.85rem;color:#9fc4d6}
+input[type=range]{flex:1;min-width:140px;accent-color:var(--verde)}
+.seg{display:inline-flex;border:1px solid #1d3d4d;border-radius:8px;overflow:hidden}
+.seg button{background:#13303f;color:#9fc4d6;border:0;padding:.4em .8em;font:inherit;font-size:.85rem;cursor:pointer}
+.seg button.on{background:var(--verde);color:#04231a;font-weight:700}
+.hint{font-size:.8rem;color:#6f93a6;margin:2px 0 8px}
+.msg{background:#13303f;border-left:4px solid var(--verde);padding:10px 14px;border-radius:8px;margin-top:10px;font-size:.92rem;line-height:1.5}b{color:var(--verde)}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span><h1>📈 Subir el grado</h1>
+<p class="sub">Un polinomio es una suma de potencias: p(x) = aₙxⁿ + … + a₁x + a₀. Elegí el grado y arrastrá las raíces sobre el eje: cada raíz es un factor (x − r), y el término de mayor grado manda en los extremos.</p>
+<div class="row"><span class="seg" id="grados"></span>
+<label style="margin-left:auto">signo de aₙ <span class="seg" id="signo"></span></label></div>
+<p class="hint">Arrastrá los puntos verdes sobre el eje x para mover las raíces. Acercá dos raíces hasta juntarlas para ver una raíz doble (la curva rebota en vez de cruzar).</p>
+<div class="eq" id="eq"></div>
+<canvas id="c" width="660" height="380"></canvas>
+<div class="msg" id="msg"></div>
+</div><script>
+const c=document.getElementById('c'),ctx=c.getContext('2d'),W=c.width,H=c.height;
+const PAD=28;
+let grado=3, sign=1;
+// raices base, una por grado (se usan las primeras 'grado')
+let raices=[-2,0,2,-3.5,3.5];
+
+// dominio mundo
+const X0=-5,X1=5;
+let Y0=-6,Y1=6; // se autoescala en Y
+const sx=v=>PAD+(v-X0)/(X1-X0)*(W-2*PAD);
+const sy=v=>H-PAD-(v-Y0)/(Y1-Y0)*(H-2*PAD);
+const invx=px=>X0+(px-PAD)/(W-2*PAD)*(X1-X0);
+
+const numfmt=n=>{const r=Math.round(n*100)/100;return Number.isInteger(r)?''+r:r.toFixed(2);};
+function activos(){return raices.slice(0,grado);}
+// coeficiente principal con magnitud para que la curva sea legible
+function lead(){return sign* (grado>=4?0.4:grado>=3?0.7:1);}
+function f(x){let y=lead();for(const r of activos())y*=(x-r);return y;}
+
+function autoscaleY(){
+  let mx=0;
+  for(let i=0;i<=200;i++){const x=X0+i/200*(X1-X0);const y=f(x);if(isFinite(y))mx=Math.max(mx,Math.abs(y));}
+  mx=Math.max(mx,1);Y1=mx*1.15;Y0=-Y1;
+}
+
+function grid(){
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#1d3d4d';ctx.lineWidth=1;ctx.font='11px system-ui';ctx.fillStyle='#5a8aa6';
+  for(let v=X0;v<=X1;v++){const x=sx(v);ctx.beginPath();ctx.moveTo(x,PAD-8);ctx.lineTo(x,H-PAD+8);ctx.stroke();}
+  // eje x e y
+  ctx.strokeStyle='#5a8aa6';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(PAD,sy(0));ctx.lineTo(W-PAD,sy(0));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sx(0),PAD-8);ctx.lineTo(sx(0),H-PAD+8);ctx.stroke();
+  ctx.fillStyle='#5a8aa6';
+  for(let v=X0;v<=X1;v++){if(v!==0)ctx.fillText(''+v,sx(v)-3,sy(0)+16);}
+}
+
+// detecta multiplicidad: cuenta raices iguales (a tolerancia)
+function multiplicidades(){
+  const rs=activos().map(r=>Math.round(r*4)/4);
+  const groups=[];
+  for(const r of rs){
+    let g=groups.find(g=>Math.abs(g.r-r)<1e-9);
+    if(g)g.m++;else groups.push({r,m:1});
+  }
+  return groups;
+}
+
+function draw(){
+  autoscaleY();grid();
+  // curva
+  ctx.strokeStyle='#16BC59';ctx.lineWidth=3;ctx.beginPath();let first=true;
+  for(let i=0;i<=400;i++){const x=X0+i/400*(X1-X0);const y=f(x);const py=sy(y);
+    if(py<PAD-40||py>H-PAD+40){first=true;continue;}
+    if(first){ctx.moveTo(sx(x),py);first=false;}else ctx.lineTo(sx(x),py);}
+  ctx.stroke();
+  // flechas de end behavior
+  const yL=f(X0),yR=f(X1);
+  ctx.fillStyle='#ffd166';ctx.font='13px system-ui';
+  ctx.fillText(yL>0?'↑ +∞':'↓ −∞',sx(X0)+2,yL>0?PAD+12:H-PAD-4);
+  ctx.fillText(yR>0?'+∞ ↑':'−∞ ↓',sx(X1)-44,yR>0?PAD+12:H-PAD-4);
+  // raices (marcadas en eje x)
+  const grp=multiplicidades();
+  for(const g of grp){
+    const px=sx(g.r),py=sy(0);
+    ctx.fillStyle= g.m%2===0 ? '#ffd166':'#eaf6ff';
+    ctx.beginPath();ctx.arc(px,py,6,0,7);ctx.fill();
+    ctx.strokeStyle='#04231a';ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle='#cfe6f2';ctx.font='11px system-ui';
+    ctx.fillText('r='+numfmt(g.r)+(g.m>1?' (×'+g.m+')':''),px-18,py-12);
+  }
+  // ecuacion factorizada
+  let eq='p(x) = '+(lead()===1?'':lead()===-1?'−':numfmt(lead())+'·');
+  for(const g of grp){const s=numfmt(-g.r);eq+='(x'+(g.r<0?' + '+numfmt(-g.r):g.r>0?' − '+numfmt(g.r):'')+')'+(g.m>1?(g.m===2?'²':g.m===3?'³':'^'+g.m):'');}
+  document.getElementById('eq').textContent=eq;
+  // mensaje pedagogico
+  const cruces=grp.filter(g=>g.m%2===1).length;
+  const rebotes=grp.filter(g=>g.m%2===0).length;
+  const par=grado%2===0;
+  let extremos = par
+    ? 'Grado <b>par</b>: las dos ramas van para el <b>mismo lado</b> ('+(sign>0?'ambas a +∞':'ambas a −∞')+').'
+    : 'Grado <b>impar</b>: las ramas van a <b>lados opuestos</b> ('+(sign>0?'−∞ a la izquierda, +∞ a la derecha':'+∞ a la izquierda, −∞ a la derecha')+').';
+  let m='Grado <b>'+grado+'</b>: a lo sumo <b>'+grado+'</b> raíces reales. '+extremos+' El término de mayor grado, <b>'+numfmt(lead())+'·x'+(grado===2?'²':grado===3?'³':'^'+grado)+'</b>, domina cuando x → ±∞. ';
+  m+='Tenés <b>'+cruces+'</b> cruce'+(cruces===1?'':'s')+' (multiplicidad impar) ';
+  m+= rebotes>0 ? 'y <b>'+rebotes+'</b> rebote'+(rebotes===1?'':'s')+' (multiplicidad par: la curva toca el eje y vuelve sin cruzar).' : '(sin rebotes).';
+  document.getElementById('msg').innerHTML=m;
+}
+
+// segmentos grado
+const gradosEl=document.getElementById('grados');
+[2,3,4,5].forEach(n=>{const b=document.createElement('button');b.textContent='grado '+n;b.onclick=()=>{grado=n;render();};gradosEl.appendChild(b);});
+const signoEl=document.getElementById('signo');
+[['+',1],['−',-1]].forEach(([t,v])=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>{sign=v;render();};signoEl.appendChild(b);});
+function render(){
+  [...gradosEl.children].forEach((b,i)=>b.classList.toggle('on',[2,3,4,5][i]===grado));
+  [...signoEl.children].forEach((b,i)=>b.classList.toggle('on',[1,-1][i]===sign));
+  draw();
+}
+
+// drag de raices
+let drag=-1;
+function pos(e){const r=c.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return {x:(t.clientX-r.left)*(W/r.width),y:(t.clientY-r.top)*(H/r.height)};}
+function pick(p){
+  const rs=activos();let best=-1,bd=18;
+  for(let i=0;i<rs.length;i++){const d=Math.hypot(sx(rs[i])-p.x,sy(0)-p.y);if(d<bd){bd=d;best=i;}}
+  return best;
+}
+c.addEventListener('mousedown',e=>{drag=pick(pos(e));});
+c.addEventListener('touchstart',e=>{drag=pick(pos(e));if(drag>=0)e.preventDefault();},{passive:false});
+function move(e){if(drag<0)return;let x=invx(pos(e).x);x=Math.max(X0+0.2,Math.min(X1-0.2,x));raices[drag]=Math.round(x*4)/4;draw();if(e.touches)e.preventDefault();}
+window.addEventListener('mousemove',move);
+c.addEventListener('touchmove',move,{passive:false});
+window.addEventListener('mouseup',()=>drag=-1);
+c.addEventListener('touchend',()=>drag=-1);
+render();
+</script></body></html>

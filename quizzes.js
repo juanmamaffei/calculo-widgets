@@ -1,4 +1,4 @@
-// Banco de preguntas por clase. 4 preguntas c/u: ok=indice correcto, fb=feedback.
+// Banco de preguntas por clase.
 window.QUIZZES = {
  "1": {
   "titulo": "¿Entendiste a Zenón?",
@@ -860,6 +860,321 @@ window.QUIZZES = {
     ],
     "ok": 0,
     "fb": "Lo decisivo es la razón. Con razón menor que 1 (acá ½) los términos se achican y la suma tiene límite; con razón mayor o igual a 1 los términos no se achican y la suma crece sin tope."
+   }
+  ]
+ },
+ "20": {
+  "titulo": "Quiz: parábola, vértice y discriminante",
+  "qs": [
+   {
+    "q": "En f(x) = a·x² + b·x + c, ¿cuál es la coordenada x del vértice (y del eje de simetría)?",
+    "opts": [
+     "h = −b/(2a)",
+     "h = c/a",
+     "h = b² − 4ac"
+    ],
+    "ok": 0,
+    "fb": "El vértice está en h = −b/(2a), y la parábola es simétrica respecto de la recta vertical x = h. La k se obtiene evaluando f(h)."
+   },
+   {
+    "q": "Si el discriminante Δ = b² − 4ac es negativo, ¿cuántas raíces reales tiene la cuadrática?",
+    "opts": [
+     "Dos siempre, por ser grado 2",
+     "Ninguna real: la parábola no toca el eje x",
+     "Una raíz doble"
+    ],
+    "ok": 1,
+    "fb": "Con Δ < 0 no hay raíces reales: la parábola no cruza el eje x (como x² + 1). Con Δ = 0 hay una raíz doble y con Δ > 0 hay dos. El grado 2 no garantiza dos cortes reales."
+   },
+   {
+    "q": "¿Qué forma de la cuadrática te muestra de un vistazo las raíces?",
+    "opts": [
+     "General: ax² + bx + c",
+     "Vértice: a(x − h)² + k",
+     "Factorizada: a(x − r₁)(x − r₂)"
+    ],
+    "ok": 2,
+    "fb": "La forma factorizada a(x − r₁)(x − r₂) exhibe las raíces r₁ y r₂. La de vértice muestra (h, k) y la general muestra la ordenada al origen c. Misma función, distinta cara."
+   },
+   {
+    "q": "Si a < 0, la parábola abre hacia abajo. ¿Qué es entonces su vértice?",
+    "opts": [
+     "Un mínimo de la función",
+     "Un máximo de la función",
+     "Una raíz de la función"
+    ],
+    "ok": 1,
+    "fb": "Con a < 0 abre hacia abajo, así que el vértice es el punto más alto: un máximo. Por eso resuelve problemas de óptimo como el de la verdulería (maximizar la ganancia)."
+   }
+  ]
+ },
+ "21": {
+  "titulo": "¿Cuánto entendiste de las polinómicas?",
+  "qs": [
+   {
+    "q": "¿Cuántas raíces reales puede tener, a lo sumo, un polinomio de grado 5?",
+    "opts": [
+     "Exactamente 5 siempre",
+     "A lo sumo 5",
+     "A lo sumo 10"
+    ],
+    "ok": 1,
+    "fb": "A lo sumo n: un grado 5 puede tener menos, porque algunas raíces pueden repetirse o ser complejas. Por ejemplo x⁵ + x tiene una sola raíz real."
+   },
+   {
+    "q": "En f(x) = (x − 2)²(x + 1), ¿qué pasa en x = 2?",
+    "opts": [
+     "La curva cruza el eje x",
+     "La curva lo toca y rebota sin cruzar",
+     "No es raíz"
+    ],
+    "ok": 1,
+    "fb": "El factor (x − 2) aparece al cuadrado: multiplicidad par. Multiplicidad par toca y rebota; impar cruza. En x = −1 (multiplicidad 1) sí cruza."
+   },
+   {
+    "q": "¿Hacia dónde van las ramas de un polinomio de grado par con coeficiente principal positivo?",
+    "opts": [
+     "Las dos para arriba (+∞)",
+     "Una para arriba y otra para abajo",
+     "Las dos para abajo (−∞)"
+    ],
+    "ok": 0,
+    "fb": "Grado par: las dos ramas van para el mismo lado. Con coeficiente principal positivo, ambas suben a +∞. El término de mayor grado manda en los extremos."
+   },
+   {
+    "q": "¿Cuál es el polinomio de grado 3 con raíces −2, 0 y 3?",
+    "opts": [
+     "(x + 2)(x − 3)",
+     "x(x + 2)(x − 3)",
+     "x²(x + 2)(x − 3)"
+    ],
+    "ok": 1,
+    "fb": "Cada raíz r da un factor (x − r): la raíz 0 da el factor x, −2 da (x + 2) y 3 da (x − 3). El producto x(x + 2)(x − 3) es de grado 3, justo lo pedido."
+   }
+  ]
+ },
+ "22": {
+  "titulo": "Potencia, raíz y dominio",
+  "qs": [
+   {
+    "q": "¿Por qué √x solo acepta x ≥ 0, pero ∛x acepta cualquier real?",
+    "opts": [
+     "Porque √ es más difícil de calcular que ∛",
+     "Porque la raíz de índice par exige radicando ≥ 0, mientras que la de índice impar no (∛(−8) = −2)",
+     "Porque √x no es una función potencial y ∛x sí"
+    ],
+    "ok": 1,
+    "fb": "Es el índice lo que decide. Índice par (√, ⁴√): el radicando debe ser ≥ 0, dominio [0, +∞). Índice impar (∛): acepta negativos, ∛(−8) = −2, dominio todo ℝ."
+   },
+   {
+    "q": "Para x = −3, ¿cuánto vale √((−3)²)?",
+    "opts": [
+     "−3, porque la raíz y el cuadrado se cancelan",
+     "3, porque √(x²) = |x| y la raíz devuelve el valor no negativo",
+     "No existe, porque hay un número negativo adentro"
+    ],
+    "ok": 1,
+    "fb": "√((−3)²) = √9 = 3 = |−3|. La regla es √(x²) = |x|, no x: el cuadrado borra el signo y la raíz devuelve siempre el valor no negativo. Cancelar «automáticamente» es el error clásico."
+   },
+   {
+    "q": "Activaste «inversa» y viste √x como reflejo de x² sobre y = x. ¿Qué significa esa simetría?",
+    "opts": [
+     "Que √x y x² son la misma función escrita distinto",
+     "Que √x es la inversa de x² (con dominio recortado a x ≥ 0): una deshace lo que hace la otra",
+     "Que las dos curvas se cruzan en el origen por casualidad"
+    ],
+    "ok": 1,
+    "fb": "El reflejo sobre y = x es la marca gráfica de la función inversa (la llave y la cerradura). √x deshace x²: 3 → 9 → 3. Pero x² no es inyectiva (3 y −3 dan 9), por eso hay que recortar su dominio a x ≥ 0 para invertirla."
+   },
+   {
+    "q": "En f(x) = xᵃ, ¿qué pasa con la curva cuando el exponente a está entre 0 y 1 (como a = ½)?",
+    "opts": [
+     "Crece cada vez más rápido, como una exponencial",
+     "Crece pero cada vez más despacio (cóncava): la forma típica de una raíz",
+     "Es una recta que pasa por el origen"
+    ],
+    "ok": 1,
+    "fb": "Con 0 < a < 1 la función crece cada vez más lento: es cóncava, la forma de √x. Con a > 1 (como x² o x³) crece cada vez más rápido. Con a = 1 es la recta y = x."
+   }
+  ]
+ },
+ "23": {
+  "titulo": "Quiz: funciones racionales y homográficas",
+  "qs": [
+   {
+    "q": "En la homográfica f(x) = (a·x + b)/(c·x + d), ¿dónde está la asíntota vertical?",
+    "opts": [
+     "En x = a/c, el cociente de los coeficientes de x",
+     "En x = −d/c, donde se anula el denominador",
+     "En y = 0, como en toda función racional"
+    ],
+    "ok": 1,
+    "fb": "Exacto: la asíntota vertical aparece donde el denominador c·x + d se hace 0, o sea x = −d/c. Ahí la división se rompe, el punto se saca del dominio y la curva se dispara a ±∞. El a/c es la HORIZONTAL, no la vertical."
+   },
+   {
+    "q": "¿A qué valor tiende (a·x + b)/(c·x + d) cuando x → ±∞ (asíntota horizontal)?",
+    "opts": [
+     "A a/c, porque a lo lejos b y d pesan poco frente a los términos en x",
+     "A −d/c, donde se anula el denominador",
+     "A b/d, el cociente de los términos independientes"
+    ],
+    "ok": 0,
+    "fb": "Justo. Cuando x es enorme, b y d casi no cuentan al lado de a·x y c·x, así que f(x) ≈ a·x/(c·x) = a/c. Esa recta y = a/c es el techo (o piso) al que se acerca sin tocar."
+   },
+   {
+    "q": "Para f(x) = (x + 1)/(x − 2), ¿cuál es su DOMINIO y dónde vale 0?",
+    "opts": [
+     "Dominio ℝ − {2}; vale 0 en x = −1",
+     "Dominio ℝ − {−1}; vale 0 en x = 2",
+     "Dominio todos los reales; nunca vale 0"
+    ],
+    "ok": 0,
+    "fb": "Bien distinguido: la función NO está definida donde se anula el denominador (x = 2), así que el dominio es ℝ − {2}. Y vale 0 donde se anula el NUMERADOR (x = −1), porque ahí f(−1) = 0/(−3) = 0. Son dos preguntas distintas: ¡no confundir el cero con el agujero!"
+   },
+   {
+    "q": "Una IA dice: «el dominio de (x + 1)/(x − 2) son todos los reales menos x = −1, porque ahí el numerador da 0». ¿Está bien?",
+    "opts": [
+     "Sí, donde el numerador es 0 la función se rompe",
+     "No: en x = −1 la función vale 0 (existe); lo que rompe el dominio es x = 2, donde se anula el DENOMINADOR",
+     "Sí, hay que sacar tanto x = −1 como x = 2"
+    ],
+    "ok": 1,
+    "fb": "La IA confundió las dos cosas. En x = −1 el numerador es 0 pero la división por −3 está perfecta: f(−1) = 0, la función existe. Lo único que rompe el dominio es dividir por cero, en x = 2. Dominio = ℝ − {2}. Validar es separar «dónde vale 0» de «dónde no existe»."
+   }
+  ]
+ },
+ "24": {
+  "titulo": "Quiz: exponencial, logaritmo e inversas",
+  "qs": [
+   {
+    "q": "¿Qué significa exactamente log₂(1024) = 10?",
+    "opts": [
+     "Que 2 elevado a la 10 da 1024, o sea: ¿cuántas veces hay que duplicar para llegar a 1024?",
+     "Que 1024 dividido 2 da 10",
+     "Que 2 por 10 da 1024"
+    ],
+    "ok": 0,
+    "fb": "Exacto: el logaritmo responde «¿a qué exponente elevo la base para obtener este número?». Como 2¹⁰ = 1024, log₂(1024) = 10. Es el exponente, nada más."
+   },
+   {
+    "q": "En el applet, log_a(x) es el reflejo de aˣ sobre la recta y = x. ¿Qué le pasa al dominio y la imagen al pasar de la exponencial a su inversa?",
+    "opts": [
+     "Quedan igual: ambas valen para todo número real",
+     "Se intercambian: aˣ tiene imagen (0, +∞), así que log_a(x) tiene dominio (0, +∞) y solo existe para x > 0",
+     "Las dos solo existen para x positivo"
+    ],
+    "ok": 1,
+    "fb": "Justo eso. Como son inversas, intercambian dominio e imagen. La exponencial nunca da un valor ≤ 0, por eso el logaritmo solo acepta entradas positivas: no hay log de 0 ni de negativos."
+   },
+   {
+    "q": "Una IA aplica una propiedad: «log(2 + 3) = log(2) + log(3)». ¿Está bien?",
+    "opts": [
+     "Sí, el logaritmo siempre reparte sobre la suma",
+     "No: la propiedad real es log(a·b) = log(a) + log(b); el log convierte el PRODUCTO en suma, no la suma",
+     "Sí, porque 2 + 3 = 5 y el log de 5 existe"
+    ],
+    "ok": 1,
+    "fb": "Mal. El log parte productos, no sumas. log(2+3) = log(5) ≈ 0,70, pero log(2) + log(3) = log(6) ≈ 0,78. Distintos. Lo que sí vale es log(2·3) = log(2) + log(3). Es un error clásico que la IA copia porque «se parece» a la propiedad verdadera."
+   },
+   {
+    "q": "Un terremoto de magnitud 7 vs. uno de 5 en escala Richter (logarítmica, base 10). ¿Cuántas veces más fuerte es?",
+    "opts": [
+     "1,4 veces, porque 7 es un 40% más que 5",
+     "2 veces, porque 7 − 5 = 2",
+     "100 veces, porque cada unidad multiplica por 10 y son 2 unidades (10×10)"
+    ],
+    "ok": 2,
+    "fb": "En una escala logarítmica cada unidad significa multiplicar por 10. Dos unidades son 10×10 = 100 veces más. Por eso un 7 no es «un poco más» que un 5: es cien veces más fuerte. Leer mal un eje logarítmico oculta diferencias enormes."
+   }
+  ]
+ },
+ "25": {
+  "titulo": "¿Por qué sen²x + cos²x siempre da 1?",
+  "qs": [
+   {
+    "q": "En el círculo de radio 1, el punto a un ángulo θ es (cos θ, sen θ). ¿De dónde sale que sen²θ + cos²θ = 1?",
+    "opts": [
+     "Es una definición que hay que memorizar, sin demostración",
+     "Es el teorema de Pitágoras: los catetos cos θ y sen θ tienen como hipotenusa el radio, que vale 1",
+     "Vale solo para algunos ángulos especiales como 30°, 45° y 60°"
+    ],
+    "ok": 1,
+    "fb": "Justo. Los catetos del triángulo son cos θ (horizontal) y sen θ (vertical), y la hipotenusa es el radio = 1. Pitágoras: cos²θ + sen²θ = 1². Por eso vale para CUALQUIER ángulo: es Pitágoras escondido en el círculo."
+   },
+   {
+    "q": "¿Cuál es la diferencia entre una identidad como sen²x + cos²x = 1 y una ecuación como sen x = 1/2?",
+    "opts": [
+     "La identidad vale para todo x; la ecuación vale solo para ciertos x",
+     "Son lo mismo, solo cambia la letra que se usa",
+     "La identidad tiene una sola solución y la ecuación tiene infinitas"
+    ],
+    "ok": 0,
+    "fb": "Eso es. La identidad es una igualdad que se cumple para TODO ángulo (siempre pasa). La ecuación pregunta qué ángulos concretos la cumplen (pasa a veces). Confundirlas es como confundir «esto siempre pasa» con «esto pasa a veces»."
+   },
+   {
+    "q": "Si sen x = 0,6 y x es un ángulo agudo, ¿cuánto vale cos x?",
+    "opts": [
+     "0,4, porque 1 − 0,6 = 0,4",
+     "0,8, porque cos x = √(1 − 0,6²) = √0,64",
+     "No se puede saber sin una calculadora de ángulos"
+    ],
+    "ok": 1,
+    "fb": "Correcto. De la identidad: cos²x = 1 − sen²x = 1 − 0,36 = 0,64, así que cos x = √0,64 = 0,8. Se aclara «agudo» porque si no, cos x también podría ser −0,8 (en el segundo cuadrante el coseno es negativo)."
+   },
+   {
+    "q": "Una IA dice que sen x = 1/2 tiene una única solución, x = 30°. ¿Está bien?",
+    "opts": [
+     "Sí, 30° es el ángulo cuyo seno vale 1/2",
+     "No: en una vuelta ya hay dos (30° y 150°), y por la periodicidad hay infinitas (±360°·k)",
+     "No, porque sen x = 1/2 no tiene ninguna solución"
+    ],
+    "ok": 1,
+    "fb": "La IA se queda con la primera que encuentra. En el círculo hay dos puntos a la misma altura: 30° y 150°. Y como el seno se repite cada vuelta, sumando ±360°·k aparecen infinitas soluciones. El error típico: tratar una ecuación trigonométrica como si tuviera una sola raíz."
+   }
+  ]
+ },
+ "26": {
+  "titulo": "Sucesiones: ¿hacia dónde van?",
+  "qs": [
+   {
+    "q": "¿Por qué una sucesión se grafica con puntos sueltos y no con una curva continua?",
+    "opts": [
+     "Porque su dominio son solo los naturales 1, 2, 3, …, no todos los reales",
+     "Porque siempre tiene infinitos términos",
+     "Por una convención para que se vea más prolijo"
+    ],
+    "ok": 0,
+    "fb": "Una sucesión es una función a: ℕ → ℝ. Como su dominio es discreto (un término por cada natural), entre n=2 y n=3 no hay nada: por eso son puntos sueltos y no una curva."
+   },
+   {
+    "q": "En aₙ = 1/n los puntos se acercan a 0 al crecer n. ¿La sucesión llega alguna vez exactamente a 0?",
+    "opts": [
+     "Sí, a partir de un n bastante grande vale 0",
+     "No: 1/n es positivo para todo n, tiende a 0 pero nunca lo alcanza",
+     "Sí, cuando n llega a infinito vale 0"
+    ],
+    "ok": 1,
+    "fb": "Acercarse no es llegar. 1/1000000 es chiquísimo pero positivo, y nunca será 0. El límite es 0, pero ningún término lo toca. Justo el malentendido que el concepto de límite viene a corregir."
+   },
+   {
+    "q": "¿Cuál es la diferencia entre una progresión aritmética y una geométrica?",
+    "opts": [
+     "La aritmética suma siempre lo mismo (es la recta sobre ℕ); la geométrica multiplica siempre por lo mismo (la exponencial sobre ℕ)",
+     "La aritmética crece y la geométrica decrece siempre",
+     "No hay diferencia real, son dos nombres para lo mismo"
+    ],
+    "ok": 0,
+    "fb": "Aritmética: aₙ = a₁ + (n−1)·d, se suma una diferencia constante (la pendiente sobre ℕ). Geométrica: aₙ = a₁·rⁿ⁻¹, se multiplica por una razón constante (lo exponencial sobre ℕ)."
+   },
+   {
+    "q": "La sucesión aₙ = (−1)ⁿ da 1, −1, 1, −1, … ¿Converge?",
+    "opts": [
+     "Sí, converge a 0 porque es el promedio",
+     "Sí, converge a 1 y a −1 a la vez",
+     "No: salta entre dos valores y nunca se queda cerca de uno solo, así que diverge"
+    ],
+    "ok": 2,
+    "fb": "Para converger, los términos tienen que amontonarse cerca de UN número. Acá oscilan eternamente entre 1 y −1 sin estabilizarse: no hay límite, la sucesión diverge."
    }
   ]
  }

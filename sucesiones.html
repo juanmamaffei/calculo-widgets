@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sucesiones · puntos que van a alguna parte</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:680px;margin:0 auto}
+.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.25rem;margin:.4em 0 .2em}
+.sub{color:#9fc4d6;font-size:.9rem;margin:0 0 14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px}
+.chip{background:#13303f;color:#bfe3ff;border:1.5px solid #1d3d4d;border-radius:999px;padding:.35em .8em;font-size:.85rem;font-family:ui-monospace,Menlo,monospace;cursor:pointer;transition:.15s}
+.chip[aria-pressed=true]{background:rgba(22,188,89,.18);border-color:var(--verde);color:var(--verde);font-weight:700}
+canvas{width:100%;height:auto;background:#0e2733;border-radius:10px;display:block;margin:8px 0}
+label{font-size:.85rem;color:#9fc4d6;display:block}
+input[type=range]{width:100%;accent-color:var(--verde);height:28px}
+.terms{font-family:ui-monospace,Menlo,monospace;font-size:.92rem;color:#bfe3ff;word-break:break-word;margin:10px 0}
+.terms b{color:var(--verde)}
+.msg{background:#13303f;border-left:4px solid var(--verde);padding:10px 14px;border-radius:8px;margin-top:8px;min-height:1.5em}
+b{color:var(--verde)}
+.small{color:#9fc4d6;font-size:.85rem}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span>
+<h1>📍 Sucesiones: puntos que van a alguna parte</h1>
+<p class="sub">Una sucesión es una función de dominio ℕ: a cada paso n le toca un término aₙ. No es una curva, son puntos sueltos. La pregunta del cálculo: al crecer n, ¿hacia dónde van?</p>
+
+<div class="chips" id="chips" role="group" aria-label="Elegí la sucesión"></div>
+
+<canvas id="c" width="660" height="320"></canvas>
+
+<label>cantidad de términos n = <b id="vn">15</b><input id="n" type="range" min="3" max="60" value="15"></label>
+
+<div class="terms" id="terms"></div>
+<div class="msg" id="msg"></div>
+<p class="small" style="margin-top:14px">Cuando los puntos se amontonan contra una línea sin pasarla, la sucesión <b>converge</b> a ese número: es su <b>límite</b>. Esa idea —«acercarse tanto como se quiera»— es la que cierra el año, de vuelta con Aquiles y la tortuga (Eje V).</p>
+</div>
+<script>
+const sucs=[
+ {id:'1/n',  lbl:'aₙ = 1/n',         f:n=>1/n,                 lim:0,    txt:'general'},
+ {id:'(-1)n',lbl:'aₙ = (−1)ⁿ',       f:n=>n%2?-1:1,            lim:null, osc:true, txt:'oscila'},
+ {id:'n',    lbl:'aₙ = n',           f:n=>n,                   lim:null, txt:'crece sin freno'},
+ {id:'arit', lbl:'aₙ = 3n−1',        f:n=>3*n-1,               lim:null, txt:'aritmética (d=3)'},
+ {id:'geo',  lbl:'aₙ = 2ⁿ',          f:n=>Math.pow(2,n),       lim:null, txt:'geométrica (r=2)'},
+ {id:'sp',   lbl:'aₙ = 1−1/2ⁿ',      f:n=>1-1/Math.pow(2,n),   lim:1,    txt:'sumas de Aquiles'},
+ {id:'e',    lbl:'aₙ = (1+1/n)ⁿ',    f:n=>Math.pow(1+1/n,n),   lim:Math.E, txt:'el número e'}
+];
+let cur=sucs[0];
+const cv=document.getElementById('c'),ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+const N=document.getElementById('n'),fmt=x=>x.toLocaleString('es-AR',{maximumFractionDigits:5});
+const chips=document.getElementById('chips');
+sucs.forEach(s=>{const b=document.createElement('button');b.className='chip';b.textContent=s.lbl;b.setAttribute('aria-pressed',s===cur);b.onclick=()=>{cur=s;[...chips.children].forEach((c,i)=>c.setAttribute('aria-pressed',sucs[i]===cur));draw();};chips.appendChild(b);});
+
+function draw(){
+ const n=+N.value;document.getElementById('vn').textContent=n;
+ // valores
+ const vals=[];for(let k=1;k<=n;k++)vals.push(cur.f(k));
+ let lo=Math.min(...vals),hi=Math.max(...vals);
+ if(cur.lim!=null){lo=Math.min(lo,cur.lim);hi=Math.max(hi,cur.lim);}
+ if(lo>0)lo=0;if(hi<0)hi=0;
+ const pad=(hi-lo)*0.12||1;lo-=pad;hi+=pad;
+ const L=40,R=W-14,T=18,Bm=H-28;
+ const px=k=>L+(k-1)/(n-1)*(R-L),py=v=>Bm-(v-lo)/(hi-lo)*(Bm-T);
+ ctx.clearRect(0,0,W,H);
+ // grilla horizontal + etiquetas y
+ ctx.strokeStyle='#1d3d4d';ctx.lineWidth=1;ctx.fillStyle='#5a8aa6';ctx.font='11px system-ui';ctx.textAlign='right';
+ for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4,y=py(v);ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(R,y);ctx.stroke();ctx.fillText(fmt(v),L-5,y+4);}
+ // eje y=0
+ if(lo<0&&hi>0){ctx.strokeStyle='#5a8aa6';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(L,py(0));ctx.lineTo(R,py(0));ctx.stroke();}
+ // linea del limite
+ if(cur.lim!=null){const y=py(cur.lim);ctx.strokeStyle='#ffd166';ctx.lineWidth=2;ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(R,y);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#ffd166';ctx.textAlign='left';ctx.fillText('límite = '+fmt(cur.lim),L+4,y-5);}
+ // puntos discretos (palitos + circulo)
+ ctx.textAlign='center';
+ for(let k=1;k<=n;k++){const x=px(k),y=py(vals[k-1]),y0=py(Math.max(lo,Math.min(hi,0)));
+  ctx.strokeStyle='#1d4a3a';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,y0);ctx.lineTo(x,y);ctx.stroke();
+  ctx.fillStyle='#16BC59';ctx.beginPath();ctx.arc(x,y,n>40?2.5:4,0,7);ctx.fill();}
+ // n en eje x
+ ctx.fillStyle='#5a8aa6';ctx.fillText('n=1',px(1),Bm+18);ctx.fillText('n='+n,px(n),Bm+18);
+ // terminos
+ const show=vals.slice(0,6).map(fmt);
+ document.getElementById('terms').innerHTML='<b>'+cur.lbl+'</b> → '+show.join('; ')+(n>6?'; …':'');
+ // mensaje
+ const m=document.getElementById('msg');const last=vals[n-1];
+ if(cur.lim!=null){const d=Math.abs(last-cur.lim);
+  m.innerHTML='Los puntos se <b>amontonan</b> contra la línea amarilla: la sucesión <b>converge a '+fmt(cur.lim)+'</b>. En n='+n+' ya está a '+fmt(d)+' del límite, y se acerca <b>tanto como quieras</b> tomando más términos — pero '+(cur.id=='1/n'?'nunca lo toca: 1/n siempre es positivo.':'sin alcanzarlo nunca con finitos términos.');}
+ else if(cur.osc){m.innerHTML='Los puntos <b>saltan</b> entre dos valores y nunca se quedan cerca de uno solo: la sucesión <b>oscila, no converge</b> (diverge). No tiene límite.';}
+ else{m.innerHTML='Los puntos <b>se disparan hacia arriba</b> sin tope: la sucesión <b>diverge</b> ('+cur.txt+'). Por más que crezca n, no se acerca a ningún número.';}
+}
+N.oninput=draw;draw();
+</script></body></html>

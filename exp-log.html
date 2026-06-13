@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Exponencial y logaritmo, espejo</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:680px;margin:0 auto}
+.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.25rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.9rem;margin:0 0 14px}
+canvas{width:100%;height:auto;background:#0e2733;border-radius:10px;display:block;margin:8px 0}
+label{font-size:.85rem;color:#9fc4d6;display:block}
+input[type=range]{width:100%;accent-color:var(--verde)}
+.eq{font-family:ui-monospace,monospace;font-size:1.05rem;text-align:center;margin:6px 0;line-height:1.6}
+.eq .exp{color:#ffd166}.eq .log{color:#5ad1ff}
+.chk{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:.85rem;color:#9fc4d6}
+.chk input{accent-color:var(--verde);width:auto}
+.demo{background:#13303f;border-radius:8px;padding:10px 14px;margin:8px 0;font-family:ui-monospace,monospace;font-size:.95rem;text-align:center}
+.demo b{color:#ffd166}
+.msg{background:#13303f;border-left:4px solid var(--verde);padding:10px 14px;border-radius:8px;margin-top:8px;font-size:.92rem;line-height:1.5}
+b{color:var(--verde)}
+.key{font-size:.78rem;color:#7fa6b8;text-align:center;margin:6px 0}
+.key span{display:inline-block;margin:0 6px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:3px}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span><h1>🪞 Exponencial y logaritmo, espejo</h1>
+<p class="sub">aˣ crece multiplicando; log_a(x) lo deshace. Son inversas: reflejadas sobre la recta y = x. El log convierte multiplicar en sumar.</p>
+<div class="eq"><span class="exp">y = a<sup>x</sup></span> &nbsp;↔&nbsp; <span class="log">y = log<sub>a</sub>(x)</span></div>
+<canvas id="c" width="660" height="440"></canvas>
+<div class="key">
+<span><i class="dot" style="background:#ffd166"></i>exponencial aˣ</span>
+<span><i class="dot" style="background:#5ad1ff"></i>logaritmo log_a(x)</span>
+<span><i class="dot" style="background:#5a8aa6"></i>recta y = x</span>
+</div>
+<label>base a = <b id="va">2</b><input type="range" id="a" min="1.2" max="5" step="0.1" value="2"></label>
+<label class="chk"><input type="checkbox" id="undo"> mostrar que el log <b>deshace</b> la exponencial (punto x → aˣ → log_a)</label>
+<div class="demo" id="demo"></div>
+<div class="msg" id="msg"></div>
+</div><script>
+const c=document.getElementById('c'),ctx=c.getContext('2d'),W=c.width,H=c.height;
+const A=document.getElementById('a'),U=document.getElementById('undo');
+// rango del mundo matematico (mismo en x e y para que la reflexion sea correcta)
+const lo=-1.5, hi=6.5, PAD=34;
+const sx=v=>PAD+(v-lo)/(hi-lo)*(W-2*PAD);
+const sy=v=>H-PAD-(v-lo)/(hi-lo)*(H-2*PAD);
+
+function grid(){
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#1d3d4d';ctx.lineWidth=1;ctx.fillStyle='#5a8aa6';ctx.font='10px system-ui';
+  for(let v=Math.ceil(lo);v<=Math.floor(hi);v++){
+    ctx.beginPath();ctx.moveTo(sx(v),PAD-8);ctx.lineTo(sx(v),H-PAD+8);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(PAD-8,sy(v));ctx.lineTo(W-PAD+8,sy(v));ctx.stroke();
+  }
+  // ejes
+  ctx.strokeStyle='#5a8aa6';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(PAD-8,sy(0));ctx.lineTo(W-PAD+8,sy(0));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sx(0),PAD-8);ctx.lineTo(sx(0),H-PAD+8);ctx.stroke();
+  // etiquetas de unos pocos enteros
+  ctx.fillStyle='#5a8aa6';
+  for(let v=Math.ceil(lo);v<=Math.floor(hi);v++){if(v!==0){ctx.fillText(v,sx(v)-3,sy(0)+14);ctx.fillText(v,sx(0)+6,sy(v)+3);}}
+}
+
+function curve(fn,from,to,color){
+  ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();let started=false;
+  for(let px=sx(from);px<=sx(to);px+=1){
+    const x=lo+(px-PAD)/(W-2*PAD)*(hi-lo);
+    if(x<from||x>to)continue;
+    const y=fn(x);if(!isFinite(y))continue;
+    const py=sy(y);
+    if(py<PAD-30||py>H-PAD+30){started=false;continue;}
+    if(!started){ctx.moveTo(sx(x),py);started=true;}else ctx.lineTo(sx(x),py);
+  }
+  ctx.stroke();
+}
+
+function draw(){
+  const a=+A.value;document.getElementById('va').textContent=a.toFixed(1);
+  grid();
+  // recta y=x punteada
+  ctx.strokeStyle='#5a8aa6';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);
+  ctx.beginPath();ctx.moveTo(sx(lo),sy(lo));ctx.lineTo(sx(hi),sy(hi));ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='#5a8aa6';ctx.font='12px ui-monospace,monospace';ctx.fillText('y = x',sx(hi)-46,sy(hi)+18);
+  // exponencial a^x : dominio todo R, imagen (0,inf)
+  curve(x=>Math.pow(a,x),lo,hi,'#ffd166');
+  // logaritmo log_a(x) : dominio (0,inf), imagen todo R
+  const lna=Math.log(a);
+  curve(x=>x>0?Math.log(x)/lna:NaN,0.001,hi,'#5ad1ff');
+  // asintotas: y=0 para exp (eje x), x=0 para log (eje y) ya estan dibujados como ejes.
+  let demo='';
+  // modo "deshacer"
+  if(U.checked){
+    const x0=1.4;                       // entrada elegida
+    const e=Math.pow(a,x0);             // a^x0
+    const back=Math.log(e)/lna;         // log_a(e) = x0
+    // punto sobre exponencial
+    ctx.fillStyle='#ffd166';
+    ctx.beginPath();ctx.arc(sx(x0),sy(e),6,0,7);ctx.fill();
+    // reflejo sobre y=x -> punto sobre logaritmo (e, x0)
+    ctx.fillStyle='#5ad1ff';
+    ctx.beginPath();ctx.arc(sx(e),sy(x0),6,0,7);ctx.fill();
+    // linea de reflexion entre ambos (perpendicular a y=x)
+    ctx.strokeStyle='#cfe8ff';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(sx(x0),sy(e));ctx.lineTo(sx(e),sy(x0));ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#cfe8ff';ctx.font='11px ui-monospace,monospace';
+    ctx.fillText('('+x0+', '+e.toFixed(2)+')',sx(x0)+9,sy(e)+4);
+    ctx.fillText('('+e.toFixed(2)+', '+x0+')',sx(e)+9,sy(x0)+4);
+    demo='Entra <b>x = '+x0+'</b> → exponencial: a<sup>'+x0+'</sup> = <b>'+e.toFixed(2)+
+      '</b> → logaritmo: log<sub>'+a.toFixed(1)+'</sub>('+e.toFixed(2)+') = <b>'+back.toFixed(2)+
+      '</b>. ¡Volvimos a '+x0+'! El log deshace la exponencial.';
+  }else{
+    // demo "producto -> suma" con la base actual, valores enteros lindos
+    const u=3,v=4,uv=12;
+    const lu=Math.log(u)/lna,lv=Math.log(v)/lna,luv=Math.log(uv)/lna;
+    demo='log<sub>'+a.toFixed(1)+'</sub>(3·4) = log(3) + log(4) → '+
+      luv.toFixed(2)+' = <b>'+lu.toFixed(2)+'</b> + <b>'+lv.toFixed(2)+
+      '</b>. El log convierte multiplicar en sumar.';
+  }
+  document.getElementById('demo').innerHTML=demo;
+  const msg=U.checked
+    ? 'La <b style="color:#5ad1ff">curva celeste</b> es el <b>espejo</b> de la <b style="color:#ffd166">curva amarilla</b> sobre la recta y = x. Por eso, lo que la exponencial arma (x → a<sup>x</sup>), el logaritmo lo desarma (a<sup>x</sup> → x): son funciones <b>inversas</b>.'
+    : 'Subí la base <b>a = '+a.toFixed(1)+'</b>: la <b style="color:#ffd166">exponencial</b> se dispara (imagen solo positivos, nunca toca y=0) y el <b style="color:#5ad1ff">logaritmo</b> crece lentísimo (solo existe para x &gt; 0). Una es el reflejo de la otra sobre y = x. Tildá el casillero para ver cómo el log deshace la exponencial.';
+  document.getElementById('msg').innerHTML=msg;
+}
+A.oninput=draw;U.onchange=draw;draw();
+</script></body></html>

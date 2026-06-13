@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Raíz y funciones potenciales</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:680px;margin:0 auto}
+.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.25rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.9rem;margin:0 0 14px}
+canvas{width:100%;height:auto;background:#0e2733;border-radius:10px;display:block;margin:8px 0}
+.eq{font-family:ui-monospace,monospace;font-size:1.3rem;text-align:center;color:var(--verde);margin:6px 0}
+label{font-size:.85rem;color:#9fc4d6;display:block}
+input[type=range]{width:100%;accent-color:var(--verde)}
+b{color:var(--verde)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.chip{background:#13303f;border:1px solid #1d3d4d;color:#9fc4d6;padding:.3em .7em;border-radius:999px;font-size:.78rem;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.chip:active{transform:scale(.96)}.chip.on{background:rgba(22,188,89,.18);border-color:var(--verde);color:var(--verde)}
+.toggle{display:flex;gap:8px;align-items:center;font-size:.85rem;color:#9fc4d6;cursor:pointer;user-select:none}
+.toggle input{accent-color:var(--verde);width:auto}
+.dom{font-family:ui-monospace,monospace;font-size:.95rem;text-align:center;color:#eaf6ff;margin:2px 0 6px}
+.msg{background:#13303f;border-left:4px solid var(--verde);padding:10px 14px;border-radius:8px;margin-top:8px;font-size:.92rem;line-height:1.45}
+.leg{display:flex;gap:14px;flex-wrap:wrap;font-size:.78rem;color:#9fc4d6;margin:4px 0}
+.leg span{display:inline-flex;align-items:center;gap:5px}
+.sw{width:14px;height:3px;border-radius:2px;display:inline-block}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span><h1>√ Raíz y funciones potenciales</h1>
+<p class="sub">f(x) = xᵃ. Deslizá el exponente a y mirá cómo cambia la curva y su dominio. La raíz √x = x^(1/2) es la inversa de x²: el reflejo respecto de y = x.</p>
+<div class="eq" id="eq">f(x) = x^0.5  =  √x</div>
+<div class="dom" id="dom"></div>
+<canvas id="c" width="660" height="420"></canvas>
+<div class="leg">
+<span><i class="sw" style="background:#16BC59"></i>f(x) = xᵃ</span>
+<span id="legInv" style="display:none"><i class="sw" style="background:#005b7f;height:3px"></i>inversa</span>
+<span id="legY" style="display:none"><i class="sw" style="background:#ffd166;height:2px"></i>y = x</span>
+</div>
+<label>exponente a = <b id="va">0.5</b><input type="range" id="a" min="-2" max="3" step="0.05" value="0.5"></label>
+<div class="row" id="presets">
+<button class="chip" data-a="0.5">a = ½ · √x</button>
+<button class="chip" data-a="2">a = 2 · x²</button>
+<button class="chip" data-a="0.3333">a = ⅓ · ∛x</button>
+<button class="chip" data-a="3">a = 3 · x³</button>
+<button class="chip" data-a="-1">a = −1 · 1/x</button>
+</div>
+<div class="row">
+<label class="toggle"><input type="checkbox" id="inv">Mostrar inversa y la recta y = x (potencia ↔ raíz)</label>
+</div>
+<div class="msg" id="msg"></div>
+</div><script>
+const c=document.getElementById('c'),ctx=c.getContext('2d'),W=c.width,H=c.height;
+const A=document.getElementById('a'),INV=document.getElementById('inv');
+const lo=-3,hi=3; // rango de ejes (cuadrado)
+const sx=v=>40+(v-lo)/(hi-lo)*(W-60);
+const sy=v=>H-40-(v-lo)/(hi-lo)*(H-60);
+// f(x)=x^a respetando dominio segun el exponente
+function pw(x,a){
+  if(x>0) return Math.pow(x,a);
+  if(x===0) return a>0?0:(a===0?1:NaN);
+  // x<0: solo si a es entero
+  if(Math.abs(a-Math.round(a))<1e-9){const n=Math.round(a);const r=Math.pow(Math.abs(x),n);return n%2===0?r:-r;}
+  return NaN; // exponente no entero con base negativa: fuera de dominio
+}
+function fmtA(a){
+  if(Math.abs(a-0.5)<.03)return'½';if(Math.abs(a-1/3)<.03)return'⅓';
+  if(Math.abs(a-2/3)<.03)return'⅔';if(Math.abs(a-Math.round(a))<.001)return''+Math.round(a);
+  return a.toFixed(2);
+}
+function grid(){
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#1d3d4d';ctx.lineWidth=1;
+  for(let v=lo;v<=hi;v++){
+    ctx.beginPath();ctx.moveTo(sx(v),20);ctx.lineTo(sx(v),H-20);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(20,sy(v));ctx.lineTo(W-20,sy(v));ctx.stroke();
+  }
+  ctx.strokeStyle='#5a8aa6';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(20,sy(0));ctx.lineTo(W-20,sy(0));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sx(0),20);ctx.lineTo(sx(0),H-20);ctx.stroke();
+  ctx.fillStyle='#5a8aa6';ctx.font='11px system-ui';
+  ctx.fillText('x',W-26,sy(0)-6);ctx.fillText('y',sx(0)+6,28);
+  ctx.fillText('1',sx(1)-3,sy(0)+14);ctx.fillText('1',sx(0)-12,sy(1)+4);
+}
+// dibuja la curva de f(x)=x^a sobre el rango de x visible
+function curve(a,color,wid){
+  ctx.strokeStyle=color;ctx.lineWidth=wid;
+  let started=false;ctx.beginPath();
+  for(let px=0;px<=W;px+=1.2){
+    const x=lo+(px-40)/(W-60)*(hi-lo);
+    const y=pw(x,a);
+    if(!isFinite(y)||y<lo-2||y>hi+2){started=false;continue;}
+    const X=sx(x),Y=sy(y);
+    if(!started){ctx.moveTo(X,Y);started=true;}else ctx.lineTo(X,Y);
+  }
+  ctx.stroke();
+}
+// inversa = reflejo de (x,f(x)) sobre y=x  ->  (f(x), x)
+function inverse(a,color,wid){
+  ctx.strokeStyle=color;ctx.lineWidth=wid;ctx.setLineDash([6,4]);
+  let started=false;ctx.beginPath();
+  for(let px=0;px<=W;px+=1.2){
+    const x=lo+(px-40)/(W-60)*(hi-lo);
+    const y=pw(x,a);
+    if(!isFinite(y)){started=false;continue;}
+    // reflejar: punto (y, x)
+    if(y<lo-2||y>hi+2||x<lo-2||x>hi+2){started=false;continue;}
+    const X=sx(y),Y=sy(x);
+    if(!started){ctx.moveTo(X,Y);started=true;}else ctx.lineTo(X,Y);
+  }
+  ctx.stroke();ctx.setLineDash([]);
+}
+function draw(){
+  const a=+A.value;
+  document.getElementById('va').textContent=fmtA(a);
+  // nombre legible
+  let nom='';
+  if(Math.abs(a-0.5)<.03)nom='  =  √x';
+  else if(Math.abs(a-1/3)<.03)nom='  =  ∛x';
+  else if(Math.abs(a-2)<.001)nom='  =  x²  (cuadrática)';
+  else if(Math.abs(a-3)<.001)nom='  =  x³';
+  else if(Math.abs(a+1)<.001)nom='  =  1/x';
+  else if(Math.abs(a-1)<.001)nom='  =  x  (la recta)';
+  else if(Math.abs(a)<.001)nom='  =  1  (constante)';
+  document.getElementById('eq').textContent='f(x) = x^'+fmtA(a)+nom;
+  grid();
+  const showInv=INV.checked;
+  document.getElementById('legInv').style.display=showInv?'inline-flex':'none';
+  document.getElementById('legY').style.display=showInv?'inline-flex':'none';
+  if(showInv){
+    // recta y=x
+    ctx.strokeStyle='#ffd166';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(sx(lo),sy(lo));ctx.lineTo(sx(hi),sy(hi));ctx.stroke();ctx.setLineDash([]);
+    inverse(a,'#005b7f',3);
+  }
+  curve(a,'#16BC59',3);
+
+  // dominio
+  const intero=Math.abs(a-Math.round(a))<1e-9;
+  let dom,domTxt;
+  if(intero){
+    const n=Math.round(a);
+    if(n<0){dom='ℝ ∖ {0}';domTxt='El exponente negativo prohíbe x = 0 (sería dividir por cero).';}
+    else{dom='ℝ  (todos los reales)';domTxt='Exponente entero ≥ 0: x puede ser cualquier real.';}
+  }else{
+    // exponente no entero: tratamos como x^a con base ≥ 0
+    dom='[0, +∞)';domTxt='Exponente no entero: la base debe ser ≥ 0. Es el caso de las raíces de índice par, como √x.';
+  }
+  document.getElementById('dom').innerHTML='Dominio:  <b>'+dom+'</b>';
+
+  // mensaje pedagogico dinamico
+  let m;
+  if(Math.abs(a-0.5)<.03){
+    m='Con a = <b>½</b> tenés <b>√x</b>: la raíz cuadrada. Solo acepta x ≥ 0. Activá «inversa»: vas a ver que √x es el <b>reflejo de x²</b> (rama x ≥ 0) sobre la recta y = x. Una deshace a la otra.';
+  }else if(Math.abs(a-2)<.001){
+    m='Con a = <b>2</b> es la <b>parábola x²</b>. No es inyectiva (3 y −3 dan 9), por eso para invertirla hay que recortar su dominio a x ≥ 0. Su inversa es √x. Ojo: <b>√(x²) = |x|</b>, no x.';
+  }else if(Math.abs(a-1/3)<.03){
+    m='Con a = <b>⅓</b> es <b>∛x</b>, raíz cúbica. Índice impar: <b>acepta negativos</b> (∛(−8) = −2). Por eso su dominio es todo ℝ, a diferencia de √x.';
+  }else if(Math.abs(a+1)<.001){
+    m='Con a = <b>−1</b> es <b>1/x</b>: el exponente negativo prohíbe x = 0. La curva tiene dos ramas que huyen del origen. Esa función la vemos a fondo la próxima clase.';
+  }else if(a<0){
+    m='Exponente <b>negativo</b> (a = '+fmtA(a)+'): la función explota cerca de x = 0 y queda dividida en ramas. El valor x = 0 queda fuera del dominio.';
+  }else if(a>0&&a<1){
+    m='Con 0 < a < 1 (acá a = <b>'+fmtA(a)+'</b>) la curva <b>crece cada vez más despacio</b> (cóncava hacia abajo): es la forma típica de una raíz. Como a no es entero, exige x ≥ 0.';
+  }else if(Math.abs(a-1)<.001){
+    m='Con a = <b>1</b> es simplemente <b>x</b>: la recta identidad. Es su propia inversa, por eso coincide con y = x.';
+  }else if(Math.abs(a)<.001){
+    m='Con a = <b>0</b>, x⁰ = <b>1</b> para todo x ≠ 0: una recta horizontal. Es constante: aplasta toda la información de x.';
+  }else{
+    m='Con a = <b>'+fmtA(a)+'</b> (mayor que 1) la curva <b>crece cada vez más rápido</b>. Cuanto más grande el exponente, más empinada. Si a no es entero, exige x ≥ 0.';
+  }
+  document.getElementById('msg').innerHTML=m;
+  // chips activos
+  document.querySelectorAll('.chip').forEach(ch=>{
+    ch.classList.toggle('on',Math.abs(+ch.dataset.a-a)<.03);
+  });
+}
+A.oninput=draw;INV.onchange=draw;
+document.querySelectorAll('.chip').forEach(ch=>{
+  ch.onclick=()=>{A.value=ch.dataset.a;draw();};
+});
+draw();
+</script></body></html>

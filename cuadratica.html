@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>La cuadrática a fondo</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:680px;margin:0 auto}
+.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.25rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.9rem;margin:0 0 14px}
+canvas{width:100%;height:auto;background:#0e2733;border-radius:10px;display:block;margin:8px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+label{font-size:.85rem;color:#9fc4d6;display:block}input[type=range]{width:100%;accent-color:var(--verde)}
+.eqs{display:flex;flex-direction:column;gap:3px;margin:6px 0}
+.eq{font-family:ui-monospace,monospace;font-size:1.02rem;text-align:center;color:var(--verde)}
+.eq small{color:#9fc4d6;font-size:.72rem}
+.eq.dim{color:#5a8aa6}
+.msg{background:#13303f;border-left:4px solid var(--verde);padding:10px 14px;border-radius:8px;margin-top:10px;font-size:.92rem;line-height:1.45}
+b{color:var(--verde)}.amber{color:#ffd166}
+.disc{display:inline-block;padding:.1em .5em;border-radius:6px;font-weight:700}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span><h1>📐 La cuadrática a fondo</h1>
+<p class="sub">f(x) = a·x² + b·x + c. Una misma parábola, tres formas. Moví a, b, c y mirá vértice, raíces, eje de simetría y el discriminante Δ decidir cuántas raíces hay.</p>
+<div class="eqs">
+<div class="eq" id="eqGen">f(x) = x² + 0x + 0 <small>general</small></div>
+<div class="eq" id="eqVert">= (x − 0)² + 0 <small>vértice</small></div>
+<div class="eq" id="eqFact">= (x − 0)(x − 0) <small>factorizada</small></div>
+</div>
+<canvas id="c" width="660" height="400"></canvas>
+<div class="grid">
+<label>a = <b id="va">1</b><input type="range" id="a" min="-2" max="2" step="0.25" value="1"></label>
+<label>b = <b id="vb">0</b><input type="range" id="b" min="-6" max="6" step="0.5" value="0"></label>
+<label>c = <b id="vc">0</b><input type="range" id="c2" min="-6" max="6" step="0.5" value="0"></label>
+</div>
+<div class="msg" id="msg"></div>
+</div><script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+const A=document.getElementById('a'),Bc=document.getElementById('b'),C=document.getElementById('c2');
+const m0=-8,m1=8; // rango del eje x e y (cuadrado)
+const sx=v=>34+(v-m0)/(m1-m0)*(W-68);
+const sy=v=>H-30-(v-m0)/(m1-m0)*(H-60);
+const fmt=n=>{n=Math.round(n*100)/100;return Number.isInteger(n)?n:n.toFixed(2).replace(/0$/,'');};
+const sgn=(n,sym)=>(n<0?' − '+fmt(-n)+sym:' + '+fmt(n)+sym);
+
+function grid(){
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#1d3d4d';ctx.lineWidth=1;
+  for(let v=m0;v<=m1;v++){
+    ctx.beginPath();ctx.moveTo(sx(v),16);ctx.lineTo(sx(v),H-16);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(16,sy(v));ctx.lineTo(W-16,sy(v));ctx.stroke();
+  }
+  ctx.strokeStyle='#5a8aa6';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(16,sy(0));ctx.lineTo(W-16,sy(0));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sx(0),16);ctx.lineTo(sx(0),H-16);ctx.stroke();
+  ctx.fillStyle='#5a8aa6';ctx.font='11px system-ui';
+  ctx.fillText('x',W-22,sy(0)-6);ctx.fillText('y',sx(0)+6,24);
+}
+
+function draw(){
+  let a=+A.value,b=+Bc.value,c=+C.value;
+  document.getElementById('va').textContent=fmt(a);
+  document.getElementById('vb').textContent=fmt(b);
+  document.getElementById('vc').textContent=fmt(c);
+  grid();
+
+  const degenerate=(a===0);
+  // --- ecuaciones (tres formas) ---
+  document.getElementById('eqGen').innerHTML='f(x) = '+fmt(a)+'x²'+sgn(b,'x')+sgn(c,'')+' <small>general</small>';
+
+  if(degenerate){
+    document.getElementById('eqVert').innerHTML='<span class="dim">= no es parábola (a = 0)</span> <small>vértice</small>';
+    document.getElementById('eqFact').innerHTML='<span class="dim">= recta y = '+fmt(b)+'x'+sgn(c,'')+'</span> <small>factorizada</small>';
+    // dibujar la recta
+    ctx.strokeStyle='#ffd166';ctx.lineWidth=3;ctx.beginPath();
+    ctx.moveTo(sx(m0),sy(b*m0+c));ctx.lineTo(sx(m1),sy(b*m1+c));ctx.stroke();
+    document.getElementById('msg').innerHTML='Con <b>a = 0</b> el término x² desaparece: ya no es una cuadrática sino una <span class="amber">recta</span>. El grado 2 es justamente lo que dobla la curva. Subí o bajá <b>a</b> para volver a la parábola.';
+    return;
+  }
+
+  const h=-b/(2*a), k=a*h*h+b*h+c;        // vértice
+  const D=b*b-4*a*c;                        // discriminante
+
+  // forma vértice
+  document.getElementById('eqVert').innerHTML='= '+fmt(a)+'(x'+(h<0?' + '+fmt(-h):' − '+fmt(h))+')²'+sgn(k,'')+' <small>vértice ('+fmt(h)+', '+fmt(k)+')</small>';
+
+  // raices y forma factorizada
+  let r1,r2,nroots;
+  if(D>1e-9){nroots=2;const s=Math.sqrt(D);r1=(-b-s)/(2*a);r2=(-b+s)/(2*a);}
+  else if(D>-1e-9){nroots=1;r1=r2=h;}
+  else{nroots=0;}
+  if(nroots===2)
+    document.getElementById('eqFact').innerHTML='= '+fmt(a)+'(x'+(r1<0?' + '+fmt(-r1):' − '+fmt(r1))+')(x'+(r2<0?' + '+fmt(-r2):' − '+fmt(r2))+') <small>factorizada</small>';
+  else if(nroots===1)
+    document.getElementById('eqFact').innerHTML='= '+fmt(a)+'(x'+(r1<0?' + '+fmt(-r1):' − '+fmt(r1))+')² <small>raíz doble</small>';
+  else
+    document.getElementById('eqFact').innerHTML='<span class="dim">= sin factores reales (Δ < 0)</span> <small>factorizada</small>';
+
+  // --- parabola ---
+  ctx.strokeStyle='#16BC59';ctx.lineWidth=3;ctx.beginPath();
+  let started=false;
+  for(let px=16;px<=W-16;px+=2){
+    const x=m0+(px-34)/(W-68)*(m1-m0);
+    const y=a*x*x+b*x+c;
+    const py=sy(y);
+    if(py<-100||py>H+100){started=false;continue;}
+    if(!started){ctx.moveTo(px,py);started=true;}else ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+
+  // eje de simetria x = h
+  ctx.strokeStyle='#7aa6c2';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);
+  ctx.beginPath();ctx.moveTo(sx(h),16);ctx.lineTo(sx(h),H-16);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='#7aa6c2';ctx.font='11px system-ui';ctx.fillText('x = '+fmt(h),sx(h)+5,26);
+
+  // raices (cortes con eje x)
+  ctx.fillStyle='#ffd166';
+  if(nroots>=1){
+    [r1,r2].slice(0,nroots).forEach(r=>{
+      if(r>=m0&&r<=m1){ctx.beginPath();ctx.arc(sx(r),sy(0),5,0,7);ctx.fill();}
+    });
+  }
+
+  // ordenada al origen c
+  ctx.fillStyle='#eaf6ff';
+  if(c>=m0&&c<=m1){ctx.beginPath();ctx.arc(sx(0),sy(c),4,0,7);ctx.fill();}
+
+  // vertice
+  ctx.fillStyle='#16BC59';ctx.beginPath();ctx.arc(sx(h),sy(k),6,0,7);ctx.fill();
+  ctx.fillStyle='#16BC59';ctx.font='12px system-ui';
+  if(k>=m0&&k<=m1)ctx.fillText('V('+fmt(h)+', '+fmt(k)+')',sx(h)+9,sy(k)+(a>0?16:-8));
+
+  // --- mensaje pedagogico ---
+  const arriba=a>0;
+  const tipoVert=arriba?'<b>mínimo</b>':'<b>máximo</b>';
+  let dcolor,draices;
+  if(nroots===2){dcolor='#16BC59';draices='<b>dos raíces reales</b> (corta el eje x en '+fmt(r1)+' y '+fmt(r2)+')';}
+  else if(nroots===1){dcolor='#ffd166';draices='<b class="amber">una raíz doble</b> (apenas toca el eje x en x = '+fmt(h)+')';}
+  else{dcolor='#ff6b6b';draices='<span style="color:#ff6b6b;font-weight:700">ninguna raíz real</span> (la parábola no toca el eje x)';}
+  document.getElementById('msg').innerHTML=
+    'La parábola abre hacia '+(arriba?'arriba':'abajo')+' (a '+(arriba?'> 0':'< 0')+'), así que su vértice es un '+tipoVert+
+    ': <b>('+fmt(h)+', '+fmt(k)+')</b>, con h = −b/2a. Es simétrica respecto del eje <span style="color:#7aa6c2">x = '+fmt(h)+'</span>. '+
+    'El discriminante <span class="disc" style="background:'+dcolor+'22;color:'+dcolor+'">Δ = b² − 4ac = '+fmt(D)+'</span> decide <i>antes de calcular</i>: como Δ '+(nroots===2?'> 0':nroots===1?'= 0':'< 0')+', hay '+draices+'.';
+}
+[A,Bc,C].forEach(s=>s.oninput=draw);draw();
+</script></body></html>

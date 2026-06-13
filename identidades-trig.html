@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Identidades y ecuaciones trigonométricas</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;--sol:#ffd166;--sen:#ff6b8a;--cos:#4fc3f7;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:680px;margin:0 auto}
+.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.25rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.9rem;margin:0 0 14px}
+canvas{width:100%;height:auto;background:#0e2733;border-radius:10px;display:block;margin:8px 0}
+.eq{font-family:ui-monospace,monospace;font-size:1.05rem;text-align:center;color:var(--verde);margin:6px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0}
+label{font-size:.85rem;color:#9fc4d6}input[type=range]{width:100%;accent-color:var(--verde)}
+.btn{background:rgba(0,91,127,.45);color:#eaf6ff;border:1px solid #2e6c8a;border-radius:8px;padding:8px 12px;font-size:.85rem;font-weight:600;cursor:pointer}
+.btn:active{background:rgba(0,91,127,.8)}
+.btn.on{background:var(--verde);color:#06281a;border-color:var(--verde)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0 2px}
+.msg{background:#13303f;border-left:4px solid var(--verde);padding:10px 14px;border-radius:8px;margin-top:10px;font-size:.92rem;line-height:1.45}
+b{color:var(--verde)}.sen{color:var(--sen)}.cos{color:var(--cos)}.amar{color:var(--sol)}
+.hide{display:none}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span><h1>🔵 El círculo y la identidad</h1>
+<p class="sub">Un punto sobre el círculo de radio 1, a un ángulo θ, vale <span class="cos">(cos θ</span>, <span class="sen">sen θ)</span>. Por Pitágoras su distancia al centro es 1: por eso <b>sen²θ + cos²θ = 1</b>, siempre. Activá «ecuación» para buscar los ángulos con un seno dado.</p>
+<div class="eq" id="eq"></div>
+<canvas id="c" width="660" height="360"></canvas>
+<div class="row">
+<button class="btn" id="play">▶︎ Animar θ</button>
+<button class="btn" id="mode">🔎 Modo ecuación: sen x = k</button>
+</div>
+<div class="grid">
+<label>ángulo θ = <b id="vt">30°</b><input type="range" id="t" min="0" max="360" value="30" step="1"></label>
+<label id="kwrap" class="hide">altura k (sen x) = <b id="vk">0.50</b><input type="range" id="k" min="-1" max="1" value="0.5" step="0.01"></label>
+</div>
+<div class="msg" id="msg"></div>
+</div><script>
+const c=document.getElementById('c'),ctx=c.getContext('2d'),W=c.width,H=c.height;
+const T=document.getElementById('t'),K=document.getElementById('k'),PLAY=document.getElementById('play'),MODE=document.getElementById('mode');
+const cx=200,cy=H/2,R=130;            // centro del circulo y radio en pixeles
+const bx=410,bw=210,bbase=H-50;       // barra de cuadrados (identidad sen2+cos2)
+let playing=false,raf=null,eqMode=false;
+
+function px(v){return cx+v*R;}        // coord x del circulo (v en unidades)
+function py(v){return cy-v*R;}        // coord y del circulo
+
+function bg(){
+  ctx.clearRect(0,0,W,H);
+  // ejes tenues del circulo
+  ctx.strokeStyle='#1d3d4d';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(cx-R-22,cy);ctx.lineTo(cx+R+22,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,cy-R-22);ctx.lineTo(cx,cy+R+22);ctx.stroke();
+  // circulo unidad
+  ctx.strokeStyle='#5a8aa6';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.stroke();
+}
+
+function draw(){
+  const th=+T.value*Math.PI/180, s=Math.sin(th), co=Math.cos(th);
+  document.getElementById('vt').textContent=Math.round(+T.value)+'°';
+  bg();
+  const Xp=px(co),Yp=py(s);
+
+  if(eqMode){
+    const k=+K.value;document.getElementById('vk').textContent=k.toFixed(2);
+    // linea horizontal de altura k: los puntos del circulo a esa altura son las soluciones
+    ctx.strokeStyle='#ffd166';ctx.lineWidth=2;ctx.setLineDash([5,4]);
+    ctx.beginPath();ctx.moveTo(cx-R-22,py(k));ctx.lineTo(cx+R+22,py(k));ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#ffd166';ctx.font='12px system-ui';ctx.fillText('sen x = '+k.toFixed(2),cx-R-18,py(k)-6);
+    // soluciones en [0,360): a1 y 180-a1
+    if(Math.abs(k)<=1){
+      let a1=Math.asin(k);                       // en (-90,90]
+      let s1=(a1*180/Math.PI+360)%360;           // primera solucion en grados
+      let s2=(180-a1*180/Math.PI+360)%360;       // segunda solucion
+      [s1,s2].forEach(deg=>{
+        const a=deg*Math.PI/180;
+        ctx.fillStyle='#16BC59';ctx.beginPath();ctx.arc(px(Math.cos(a)),py(Math.sin(a)),6,0,7);ctx.fill();
+        ctx.strokeStyle='#eaf6ff';ctx.lineWidth=1.2;ctx.stroke();
+        ctx.fillStyle='#eaf6ff';ctx.font='11px system-ui';ctx.fillText(Math.round(deg)+'°',px(Math.cos(a))+8,py(Math.sin(a))-6);
+      });
+      const eqv=Math.abs(Math.abs(k)-1)<1e-9, none=false;
+      document.getElementById('eq').textContent='sen x = '+k.toFixed(2)+'  →  x ∈ {'+Math.round(s1)+'°, '+Math.round(s2)+'°} + 360°·k';
+      let txt='Resolver una <b>ecuación</b> es distinto de una identidad: buscamos los ángulos concretos con seno <span class="amar">'+k.toFixed(2)+'</span>. ';
+      if(eqv){
+        txt+='Acá k=±1, así que hay <b>una sola</b> solución por vuelta: '+Math.round(s1)+'°. La recta toca el círculo en un único punto.';
+      }else{
+        txt+='En una vuelta hay <b>dos</b>: '+Math.round(s1)+'° y '+Math.round(s2)+'° (la recta corta el círculo en dos puntos). ';
+        txt+='Y por la <b>periodicidad</b> del seno, sumándoles vueltas completas (±360°·k) hay <b>infinitas</b> soluciones. No es como una ecuación común de una sola raíz.';
+      }
+      document.getElementById('msg').innerHTML=txt;
+    }else{
+      document.getElementById('eq').textContent='sen x = '+k.toFixed(2)+'  →  sin solución';
+      document.getElementById('msg').innerHTML='Con |k| &gt; 1 <b>no hay solución</b>: el seno nunca supera 1 ni baja de −1, así que la recta no toca el círculo.';
+    }
+    return;
+  }
+
+  // ---- modo identidad ----
+  // catetos: cos (horizontal) y sen (vertical), formando el triangulo rectangulo
+  ctx.strokeStyle='var';
+  // cateto cos: del centro al pie (Xp,cy)
+  ctx.strokeStyle='#4fc3f7';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(Xp,cy);ctx.stroke();
+  // cateto sen: del pie al punto
+  ctx.strokeStyle='#ff6b8a';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(Xp,cy);ctx.lineTo(Xp,Yp);ctx.stroke();
+  // hipotenusa = radio
+  ctx.strokeStyle='#16BC59';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(Xp,Yp);ctx.stroke();
+  // marca del angulo recto
+  const sgX=co>=0?1:-1, sgY=s>=0?-1:1, q=10;
+  ctx.strokeStyle='#9fc4d6';ctx.lineWidth=1;
+  ctx.strokeRect(Xp-(sgX<0?q:0),cy-(sgY<0?q:0),q,q);
+  // arco del angulo theta
+  ctx.strokeStyle='#ffd166';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,24,0,-th,th>0);ctx.stroke();
+  ctx.fillStyle='#ffd166';ctx.font='12px system-ui';ctx.fillText('θ',cx+28,cy-(s>=0?8:-16));
+  // punto sobre el circulo
+  ctx.fillStyle='#16BC59';ctx.beginPath();ctx.arc(Xp,Yp,6,0,7);ctx.fill();
+  ctx.strokeStyle='#eaf6ff';ctx.lineWidth=1.2;ctx.stroke();
+  // etiquetas de catetos
+  ctx.fillStyle='#4fc3f7';ctx.font='12px system-ui';ctx.fillText('cos θ',(cx+Xp)/2-14,cy+(s>=0?16:-8));
+  ctx.fillStyle='#ff6b8a';ctx.fillText('sen θ',Xp+(co>=0?8:-44),(cy+Yp)/2);
+
+  // ---- barra de la identidad: cos2 + sen2 = 1 ----
+  const cos2=co*co, sen2=s*s, bh=R; // altura total = 1 unidad mapeada a R px
+  ctx.fillStyle='#9fc4d6';ctx.font='12px system-ui';ctx.textAlign='center';
+  ctx.fillText('sen²θ + cos²θ',bx+bw/2,bbase-bh-14);
+  ctx.textAlign='left';
+  // contorno =1
+  ctx.strokeStyle='#5a8aa6';ctx.lineWidth=1.5;ctx.strokeRect(bx,bbase-bh,bw,bh);
+  ctx.fillStyle='#9fc4d6';ctx.fillText('1',bx+bw+8,bbase-bh+6);
+  // cos2 abajo (azul)
+  const hC=cos2*bh, hS=sen2*bh;
+  ctx.fillStyle='rgba(79,195,247,.55)';ctx.fillRect(bx,bbase-hC,bw,hC);
+  // sen2 arriba (rosa)
+  ctx.fillStyle='rgba(255,107,138,.55)';ctx.fillRect(bx,bbase-hC-hS,bw,hS);
+  // textos dentro
+  ctx.fillStyle='#eaf6ff';ctx.font='12px system-ui';ctx.textAlign='center';
+  if(hC>16)ctx.fillText('cos²θ = '+cos2.toFixed(2),bx+bw/2,bbase-hC/2+4);
+  if(hS>16)ctx.fillText('sen²θ = '+sen2.toFixed(2),bx+bw/2,bbase-hC-hS/2+4);
+  ctx.textAlign='left';
+
+  document.getElementById('eq').textContent='sen²θ + cos²θ = '+sen2.toFixed(2)+' + '+cos2.toFixed(2)+' = '+(sen2+cos2).toFixed(2);
+  document.getElementById('msg').innerHTML=
+    'A θ = <b>'+Math.round(+T.value)+'°</b>: <span class="cos">cos θ = '+co.toFixed(2)+'</span> (cateto horizontal) y '+
+    '<span class="sen">sen θ = '+s.toFixed(2)+'</span> (cateto vertical). La hipotenusa es el <b>radio = 1</b>. '+
+    'Por más que gires θ, la barra de la derecha siempre se llena hasta <b>1</b>: <b>sen²θ + cos²θ = 1</b>. '+
+    'No es magia ni hay que memorizarla: es el <b>teorema de Pitágoras</b> dentro del círculo. Eso la vuelve una <b>identidad</b> (vale para todo ángulo).';
+}
+
+function step(){let v=+T.value+1.4;if(v>360)v-=360;T.value=v;draw();if(playing)raf=requestAnimationFrame(step);}
+PLAY.onclick=()=>{playing=!playing;PLAY.classList.toggle('on',playing);PLAY.textContent=playing?'⏸ Pausar':'▶︎ Animar θ';if(playing)step();else if(raf)cancelAnimationFrame(raf);};
+MODE.onclick=()=>{eqMode=!eqMode;MODE.classList.toggle('on',eqMode);document.getElementById('kwrap').classList.toggle('hide',!eqMode);draw();};
+[T,K].forEach(s=>s.oninput=draw);
+draw();
+</script></body></html>
