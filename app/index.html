@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cálculo I — Un año contado como historia</title>
+    <link rel="stylesheet" href="./style-4ef01d935160b663.css" integrity="sha384-MKxuo6JU+lKcpHLv2vkNhB9YR8Ob/xKIi2s0pEHzTJIYLa6Yx3dzRBpjyUz7/Otv"/>
+  <link rel="modulepreload" href="./calculo-i-interfaz-fd2ad217562d3f6b.js" crossorigin="anonymous" integrity="sha384-cyMu7VAWu79kXAvTmse3M3Uvnk5YZpenJAB/cgFViOzsgoi+1lniiZofUqegzcCO"><link rel="preload" href="./calculo-i-interfaz-fd2ad217562d3f6b_bg.wasm" crossorigin="anonymous" integrity="sha384-OBwvtiD86mlwJCUOjifUdUAAlkMCEdrmkVv7+qv1/ngD01BzPsmGTltonDZcPRLA" as="fetch" type="application/wasm"></head>
+  <body>
+<script type="module">
+import init, * as bindings from './calculo-i-interfaz-fd2ad217562d3f6b.js';
+const wasm = await init({ module_or_path: './calculo-i-interfaz-fd2ad217562d3f6b_bg.wasm' });
+
+
+window.wasmBindings = bindings;
+
+
+dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
+
+</script></body>
+</html>
