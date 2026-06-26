@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Visualización interactiva — Cálculo II</title>
+<style>
+:root{--curso:#005b7f;--verde:#16BC59;--tinta:#0b1f2a;}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--tinta);color:#eaf6ff;padding:18px}
+.wrap{max-width:700px;margin:0 auto}
+.pill{display:inline-block;background:rgba(22,188,89,.15);color:var(--verde);padding:.15em .6em;border-radius:999px;font-size:.8rem;font-weight:600}
+h1{font-size:1.22rem;margin:.4em 0 .2em}.sub{color:#9fc4d6;font-size:.92rem;margin:0 0 14px;line-height:1.5}
+canvas{width:100%;height:auto;background:#0e2733;border-radius:10px;display:block;margin:8px 0}
+.ctl{background:#13303f;border-radius:10px;padding:12px 14px;margin-top:6px}
+label{font-size:.85rem;color:#9fc4d6;display:block;margin-bottom:4px}
+input[type=range]{width:100%;accent-color:var(--verde)}
+b{color:var(--verde)}
+</style></head><body><div class="wrap">
+<span class="pill">interactivo</span>
+<h1 id="ttl">Visualización</h1>
+<p class="sub" id="intro"></p>
+<canvas id="c" width="680" height="420"></canvas>
+<div class="ctl"><label id="lab"></label><input type="range" id="s"></div>
+</div>
+<script>
+// ---- paleta (tema oscuro) ----
+const TINTA="#eaf6ff", ACENTO="#ff9e9e", ACENTO2="#6fb3ff", GRIS="#5a8aa6", AMBAR="#ffd166", TENUE="#39596b";
+const PI=Math.PI, SQRT2=Math.SQRT2;
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+
+function texto(t,x,y,color,font){ctx.fillStyle=color;ctx.font=font;ctx.fillText(t,x,y);}
+function linea(x1,y1,x2,y2,color,ancho){ctx.strokeStyle=color;ctx.lineWidth=ancho;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
+function punto(x,y,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,PI*2);ctx.fill();}
+function marco(w,h,xmin,xmax,ymin,ymax){
+  const x0=52,x1=w-24,yb=h-40,yt=30;
+  const px=x=>x0+(x-xmin)/(xmax-xmin)*(x1-x0);
+  const py=y=>yb-(y-ymin)/(ymax-ymin)*(yb-yt);
+  const yejex=(ymin<=0&&0<=ymax)?py(0):yb;
+  linea(x0,yejex,x1,yejex,GRIS,1); linea(x0,yb,x0,yt,GRIS,1);
+  return {px,py,x0,x1,yb,yt};
+}
+function curva(f,px,py,xmin,xmax,color,ancho){
+  ctx.strokeStyle=color;ctx.lineWidth=ancho;ctx.beginPath();
+  const n=240;
+  for(let i=0;i<=n;i++){const x=xmin+(xmax-xmin)*i/n;const cx=px(x),cy=py(f(x));i===0?ctx.moveTo(cx,cy):ctx.lineTo(cx,cy);}
+  ctx.stroke();
+}
+const fac=k=>{let f=1;for(let j=1;j<=k;j++)f*=j;return f;};
+
+// ============================ las 12 visualizaciones ============================
+const VIZ = {
+ epsilon_delta:{
+  slider:[1,20,8,"Tolerancia ε exigida (= valor / 10)"], h:420,
+  title:"El juego ε–δ, en vivo",
+  intro:"Te exijo una tolerancia ε alrededor de L; yo respondo con un margen δ alrededor de a. Si gano para CUALQUIER ε, el límite es L. Acá f(x)=2x, a=1,5, L=3, δ=ε/2.",
+  draw(w,h,p){
+   const mx=50,x0=mx,x1=w-mx,yb=h-38,yt=34;
+   const xmin=0,xmax=3,fmin=0,fmax=6;
+   const px=x=>x0+(x-xmin)/(xmax-xmin)*(x1-x0);
+   const py=f=>yb-(f-fmin)/(fmax-fmin)*(yb-yt);
+   const a=1.5,l=3,eps=p/10,delta=eps/2;
+   ctx.fillStyle=ACENTO;ctx.globalAlpha=.16;ctx.fillRect(x0,py(l+eps),x1-x0,py(l-eps)-py(l+eps));
+   ctx.fillStyle=ACENTO2;ctx.globalAlpha=.18;ctx.fillRect(px(a-delta),yt,px(a+delta)-px(a-delta),yb-yt);ctx.globalAlpha=1;
+   linea(x0,yb,x1,yb,GRIS,1);linea(x0,yb,x0,yt,GRIS,1);
+   linea(px(xmin),py(2*xmin),px(xmax),py(2*xmax),TINTA,2);
+   linea(x0,py(l),px(a),py(l),GRIS,1);linea(px(a),yb,px(a),py(l),GRIS,1);
+   punto(px(a),py(l),5,ACENTO);
+   texto("L+ε",x1-36,py(l+eps)-4,ACENTO,"12px Georgia");
+   texto("L−ε",x1-36,py(l-eps)+14,ACENTO,"12px Georgia");
+   texto("L=3",x0+4,py(l)-5,GRIS,"12px Georgia");
+   texto("a=1,5",px(a)-14,yb+16,ACENTO2,"12px Georgia");
+   texto("si 0<|x−a|<δ ⇒ |f(x)−L|<ε  (gana para todo ε ⇒ el límite es L)",x0,20,GRIS,"italic 13px Georgia");
+   texto(`Te exijo ε = ${eps.toFixed(2)}  →  respondo δ = ${delta.toFixed(2)}`,x0,h-12,ACENTO2,"15px Georgia");
+  }},
+ bolzano:{
+  slider:[0,12,4,"Pasos de bisección"], h:420,
+  title:"Bolzano / bisección: el cambio de signo atrapa una raíz",
+  intro:"f continua en [a,b] con f(a)·f(b)<0 ⇒ hay un cero. Partir a la mitad y quedarse con el lado que cambia de signo ES el método de bisección. f(x)=x³−x−1 en [1,2].",
+  draw(w,h,pasos){
+   const mx=50,x0=mx,x1=w-mx,yb=h-38,yt=34;
+   const xmin=1,xmax=2,fmin=-2,fmax=5.5;
+   const f=x=>x*x*x-x-1;
+   const px=x=>x0+(x-xmin)/(xmax-xmin)*(x1-x0);
+   const py=v=>yb-(v-fmin)/(fmax-fmin)*(yb-yt);
+   let a=1,b=2;
+   for(let i=0;i<pasos;i++){const m=(a+b)/2; if(f(a)*f(m)<=0)b=m;else a=m;}
+   ctx.fillStyle=AMBAR;ctx.globalAlpha=.22;ctx.fillRect(px(a),yt,px(b)-px(a),yb-yt);ctx.globalAlpha=1;
+   linea(x0,py(0),x1,py(0),GRIS,1);linea(x0,yb,x0,yt,GRIS,1);
+   curva(f,px,py,xmin,xmax,TINTA,2);
+   linea(px(a),yt,px(a),yb,ACENTO,1.2);linea(px(b),yt,px(b),yb,ACENTO,1.2);
+   punto(px(a),py(f(a)),4,ACENTO);punto(px(b),py(f(b)),4,ACENTO);
+   texto(`f(${a.toFixed(4)})=${f(a)>=0?'+':''}${f(a).toFixed(2)}`,px(a)-8,yb+16,ACENTO,"12px Georgia");
+   texto(`f(${b.toFixed(4)})=${f(b)>=0?'+':''}${f(b).toFixed(2)}`,px(b)-34,yt-4,ACENTO,"12px Georgia");
+   texto("f(x)=x³−x−1 cambia de signo en [1,2] ⇒ cruza el cero (Bolzano)",x0,20,GRIS,"italic 13px Georgia");
+   texto(`paso ${pasos}: raíz atrapada en [${a.toFixed(4)} ; ${b.toFixed(4)}]  ·  ancho ${(b-a).toFixed(4)}`,x0,h-12,ACENTO2,"14px Georgia");
+  }},
+ tangente:{
+  slider:[1,40,3,"Acercamiento del segundo punto (más alto = más cerca)"], h:420,
+  title:"La secante que se vuelve tangente (Fermat)",
+  intro:"La pendiente de la recta tangente es el límite de las pendientes de las secantes PQ cuando Q se acerca a P. f(x)=x², P=(1;1).",
+  draw(w,h,p){
+   const f=x=>x*x;
+   const {px,py}=marco(w,h,-0.3,2.7,-0.5,7.0);
+   const a=1,hh=2.4/p,bb=Math.min(a+hh,2.6);
+   const m_sec=(f(bb)-f(a))/(bb-a),m_tan=2*a;
+   curva(f,px,py,-0.3,2.7,TINTA,2);
+   curva(x=>f(a)+m_tan*(x-a),px,py,-0.3,2.7,TENUE,1.5);
+   linea(px(-0.3),py(f(a)+m_sec*(-0.3-a)),px(2.7),py(f(a)+m_sec*(2.7-a)),ACENTO,2);
+   punto(px(a),py(f(a)),5,ACENTO2);punto(px(bb),py(f(bb)),5,ACENTO);
+   texto("P",px(a)-14,py(f(a))+4,ACENTO2,"bold 13px Georgia");
+   texto("Q",px(bb)+8,py(f(bb))+4,ACENTO,"bold 13px Georgia");
+   texto("f(x)=x²  ·  P=(1 ; 1)",px(-0.3)+4,22,GRIS,"italic 13px Georgia");
+   texto(`pendiente de la secante PQ = ${m_sec.toFixed(3)}  →  tangente = ${m_tan.toFixed(0)}`,px(-0.3)+4,h-14,ACENTO,"15px Georgia");
+  }},
+ velocidad:{
+  slider:[1,40,3,"Acercamiento del intervalo Δt (más alto = más chico)"], h:420,
+  title:"De la velocidad media a la instantánea (caída libre)",
+  intro:"La velocidad media en [t, t+Δt] es la pendiente de la secante; al achicar Δt tiende a la velocidad instantánea (pendiente de la tangente). s(t)=4,9 t².",
+  draw(w,h,p){
+   const s=t=>4.9*t*t;
+   const {px,py}=marco(w,h,0,3,0,44.1);
+   const t0=1,dt=Math.min(2/p,2.9-t0);
+   const v_med=(s(t0+dt)-s(t0))/dt,v_ins=9.8*t0;
+   curva(s,px,py,0,3,TINTA,2);
+   linea(px(t0),py(s(t0)),px(t0+dt),py(s(t0+dt)),ACENTO,2.5);
+   punto(px(t0),py(s(t0)),5,ACENTO2);punto(px(t0+dt),py(s(t0+dt)),5,ACENTO);
+   curva(t=>s(t0)+v_ins*(t-t0),px,py,0,3,TENUE,1.5);
+   texto("s(t)=4,9 t²  (caída libre)",px(0)+4,22,GRIS,"italic 13px Georgia");
+   texto(`Δt = ${dt.toFixed(3)} s  ·  v media = ${v_med.toFixed(2)} m/s  →  v instantánea = ${v_ins.toFixed(1)} m/s`,px(0)+4,h-14,ACENTO,"14px Georgia");
+  }},
+ tvm:{
+  slider:[10,50,30,"Extremo derecho b del intervalo (= valor / 10)"], h:420,
+  title:"Teorema del valor medio",
+  intro:"Existe un c interior donde la tangente es paralela a la secante de los extremos: f'(c) iguala la pendiente media. f(x)=2+sen x.",
+  draw(w,h,p){
+   const f=x=>2+Math.sin(x), fp=x=>Math.cos(x);
+   const a=0.5,b=Math.min(Math.max(p/10,a+1),5.5);
+   const {px,py}=marco(w,h,0,6,0,3.5);
+   const m=(f(b)-f(a))/(b-a);
+   let c=a,best=Infinity;const n=600;
+   for(let i=0;i<=n;i++){const x=a+(b-a)*i/n;const d=Math.abs(fp(x)-m);if(d<best){best=d;c=x;}}
+   curva(f,px,py,0,6,TINTA,2);
+   linea(px(a),py(f(a)),px(b),py(f(b)),ACENTO2,2);
+   const tan=x=>f(c)+m*(x-c);
+   linea(px(Math.max(c-1.2,0)),py(tan(Math.max(c-1.2,0))),px(Math.min(c+1.2,6)),py(tan(Math.min(c+1.2,6))),ACENTO,2.5);
+   punto(px(a),py(f(a)),5,ACENTO2);punto(px(b),py(f(b)),5,ACENTO2);punto(px(c),py(f(c)),5,ACENTO);
+   texto("c",px(c)-4,py(f(c))-10,ACENTO,"bold 14px Georgia");
+   texto("f(x)=2+sen x  ·  secante de [a,b] ∥ tangente en c",px(0)+4,22,GRIS,"italic 13px Georgia");
+   texto(`a=0,5  b=${b.toFixed(2)}  ·  f'(c)=${m.toFixed(3)} = pendiente media  ·  c≈${c.toFixed(3)}`,px(0)+4,h-14,ACENTO,"14px Georgia");
+  }},
+ optimizacion:{
+  slider:[1,49,8,"Lado x del recorte (= valor / 10)"], h:420,
+  title:"Optimización: la caja sin tapa",
+  intro:"Lámina 10×10: recorto cuadrados de lado x y doblo una caja. V(x)=x(10−2x)². ¿Dónde está el volumen máximo? La derivada igualada a cero lo encuentra.",
+  draw(w,h,p){
+   const v=x=>x*(10-2*x)*(10-2*x);
+   const {px,py}=marco(w,h,0,5,0,80);
+   const x=Math.min(Math.max(p/10,0.05),4.95), xopt=5/3;
+   curva(v,px,py,0,5,TINTA,2);
+   linea(px(xopt),py(0),px(xopt),py(v(xopt)),TENUE,1.5);
+   punto(px(xopt),py(v(xopt)),4,AMBAR);
+   texto(`máx en x=${xopt.toFixed(2)}`,px(xopt)+6,py(v(xopt))-6,AMBAR,"12px Georgia");
+   linea(px(x),py(0),px(x),py(v(x)),ACENTO,1.2);
+   punto(px(x),py(v(x)),5,ACENTO);
+   texto("Recorto cuadrados de lado x y doblo una caja",px(0)+4,22,GRIS,"italic 13px Georgia");
+   texto(`V(x)=x(10−2x)²  ·  x=${x.toFixed(2)} ⇒ V=${v(x).toFixed(1)}  (máximo ${v(xopt).toFixed(1)})`,px(0)+4,h-14,ACENTO,"14px Georgia");
+  }},
+ riemann:{
+  slider:[1,40,4,"Cantidad de rectángulos n"], h:420,
+  title:"Sumas de Riemann",
+  intro:"Aproximamos el área bajo la curva con rectángulos (punto medio). Cuantos más rectángulos, más cerca del área exacta. f(x)=3−0,6(x−1,5)² en [0,3].",
+  draw(w,h,p){
+   const f=x=>3-0.6*(x-1.5)*(x-1.5);
+   const a=0,b=3;
+   const {px,py}=marco(w,h,-0.1,3.1,0,3.4);
+   const n=Math.max(p,1),dx=(b-a)/n;let suma=0;
+   for(let i=0;i<n;i++){
+    const xm=a+(i+0.5)*dx,alt=f(xm);suma+=alt*dx;const xl=a+i*dx;
+    ctx.fillStyle=ACENTO2;ctx.globalAlpha=.30;ctx.fillRect(px(xl),py(alt),px(xl+dx)-px(xl),py(0)-py(alt));ctx.globalAlpha=1;
+    ctx.strokeStyle=ACENTO2;ctx.lineWidth=1;ctx.strokeRect(px(xl),py(alt),px(xl+dx)-px(xl),py(0)-py(alt));
+   }
+   curva(f,px,py,-0.1,3.1,TINTA,2);
+   texto("f(x)=3−0,6(x−1,5)²  en [0,3]",px(-0.1)+4,22,GRIS,"italic 13px Georgia");
+   texto(`n=${n}  ·  suma (punto medio) = ${suma.toFixed(4)}  →  área exacta = 7,65`,px(-0.1)+4,h-14,ACENTO,"14px Georgia");
+  }},
+ tfc:{
+  slider:[3,63,20,"Límite superior x (= valor / 10)"], h:460,
+  title:"El Teorema Fundamental: la función de acumulación",
+  intro:"Arriba: f(t)=1,5+sen t y el área acumulada hasta x. Abajo: la función A(x)=∫₀ˣ f. La pendiente de A en x es exactamente f(x): A'(x)=f(x).",
+  draw(w,h,p){
+   const f=t=>1.5+Math.sin(t), a_acum=x=>1.5*x+1-Math.cos(x);
+   const x=Math.min(Math.max(p/10,0.3),6.3), xmin=0,xmax=6.3;
+   const x0=52,x1=w-24;
+   const pxg=v=>x0+(v-xmin)/(xmax-xmin)*(x1-x0);
+   const yb1=h*0.46,yt1=28,fmin=0,fmax=2.6;
+   const py1=v=>yb1-(v-fmin)/(fmax-fmin)*(yb1-yt1);
+   linea(x0,py1(0),x1,py1(0),GRIS,1);
+   ctx.fillStyle=ACENTO;ctx.globalAlpha=.20;ctx.beginPath();ctx.moveTo(pxg(0),py1(0));
+   for(let i=0;i<=200;i++){const t=x*i/200;ctx.lineTo(pxg(t),py1(f(t)));}
+   ctx.lineTo(pxg(x),py1(0));ctx.closePath();ctx.fill();ctx.globalAlpha=1;
+   ctx.strokeStyle=TINTA;ctx.lineWidth=2;ctx.beginPath();
+   for(let i=0;i<=240;i++){const t=xmin+(xmax-xmin)*i/240;const cx=pxg(t),cy=py1(f(t));i===0?ctx.moveTo(cx,cy):ctx.lineTo(cx,cy);}
+   ctx.stroke();
+   linea(pxg(x),py1(0),pxg(x),py1(f(x)),ACENTO,1.5);
+   texto("f(t)=1,5+sen t  ·  el área hasta x",x0+4,20,GRIS,"italic 13px Georgia");
+   const yb2=h-38,yt2=h*0.56,amin=0,amax=12;
+   const py2=v=>yb2-(v-amin)/(amax-amin)*(yb2-yt2);
+   linea(x0,yb2,x1,yb2,GRIS,1);linea(x0,yb2,x0,yt2,GRIS,1);
+   ctx.strokeStyle=ACENTO2;ctx.lineWidth=2;ctx.beginPath();
+   for(let i=0;i<=240;i++){const t=xmin+(xmax-xmin)*i/240;const cx=pxg(t),cy=py2(a_acum(t));i===0?ctx.moveTo(cx,cy):ctx.lineTo(cx,cy);}
+   ctx.stroke();
+   punto(pxg(x),py2(a_acum(x)),5,ACENTO);
+   texto(`A(x)=∫₀ˣ f  ·  x=${x.toFixed(2)} ⇒ A=${a_acum(x).toFixed(3)}  ·  A'(x)=f(x)=${f(x).toFixed(3)}`,x0+4,h-12,ACENTO,"14px Georgia");
+  }},
+ taylor:{
+  slider:[1,8,2,"Cantidad de términos del polinomio"], h:420,
+  title:"Polinomio de Taylor de sen x en 0",
+  intro:"Aproximamos sen x (negro) con su polinomio de Maclaurin (rojo): x − x³/3! + x⁵/5! − … Con más términos, el ajuste se extiende cada vez más lejos del 0.",
+  draw(w,h,p){
+   const f=x=>Math.sin(x), terms=Math.max(p,1);
+   const poly=x=>{let s=0;for(let k=0;k<terms;k++){const sign=k%2===0?1:-1;s+=sign*Math.pow(x,2*k+1)/fac(2*k+1);}return s;};
+   const {px,py}=marco(w,h,-6.5,6.5,-3,3);
+   curva(f,px,py,-6.5,6.5,TINTA,2);
+   ctx.strokeStyle=ACENTO;ctx.lineWidth=2;ctx.beginPath();let started=false;
+   for(let i=0;i<=300;i++){const x=-6.5+13*i/300;const y=poly(x);if(Math.abs(y)>3.4){started=false;continue;}const cx=px(x),cy=py(y);if(!started){ctx.moveTo(cx,cy);started=true;}else ctx.lineTo(cx,cy);}
+   ctx.stroke();
+   punto(px(0),py(0),4,ACENTO2);
+   texto("sen x (claro)  vs  polinomio de Taylor en 0 (rojo)",px(-6.5)+60,22,GRIS,"italic 13px Georgia");
+   texto(`${terms} término(s):  x − x³/3! + x⁵/5! − …  (más términos ⇒ ajusta más lejos)`,px(-6.5)+4,h-14,ACENTO,"13px Georgia");
+  }},
+ sucesion:{
+  slider:[2,40,6,"Cantidad de términos mostrados (n)"], h:420,
+  title:"Convergencia de una sucesión",
+  intro:"aₙ = 1 + (−1)ⁿ⁺¹/n → 1. Desde cierto N, todos los términos caen dentro de la banda 1±ε: eso es converger. Los de adentro se pintan en azul.",
+  draw(w,h,p){
+   const a=n=>1+(n%2===1?1:-1)/n;
+   const nmax=Math.max(p,2),l=1,eps=0.2;
+   const {px,py}=marco(w,h,0,nmax+1,0,2.2);
+   ctx.fillStyle=ACENTO;ctx.globalAlpha=.14;ctx.fillRect(px(0),py(l+eps),px(nmax+1)-px(0),py(l-eps)-py(l+eps));ctx.globalAlpha=1;
+   linea(px(0),py(l),px(nmax+1),py(l),GRIS,1);
+   texto("L = 1",px(nmax+1)-44,py(l)-5,GRIS,"12px Georgia");
+   for(let n=1;n<=nmax;n++){const dentro=Math.abs(a(n)-l)<eps;punto(px(n),py(a(n)),4,dentro?ACENTO2:ACENTO);}
+   texto("aₙ = 1 + (−1)ⁿ⁺¹ / n",px(0)+4,22,GRIS,"italic 13px Georgia");
+   texto(`n hasta ${nmax}  ·  aₙ → 1: desde cierto N todos caen en la banda 1±${eps.toFixed(1)}`,px(0)+4,h-14,ACENTO,"13px Georgia");
+  }},
+ newton:{
+  slider:[0,6,2,"Cantidad de iteraciones de Newton"], h:420,
+  title:"Newton–Raphson buscando √2",
+  intro:"Cada paso sigue la tangente hasta el eje x: xₙ₊₁ = xₙ − f(xₙ)/f'(xₙ). Sobre f(x)=x²−2 desde x₀=2, las iteraciones se clavan en √2 a velocidad cuadrática.",
+  draw(w,h,p){
+   const f=x=>x*x-2, fp=x=>2*x;
+   const {px,py}=marco(w,h,0.4,2.6,-2.5,5);
+   curva(f,px,py,0.4,2.6,TINTA,2);
+   const iters=Math.max(p,0);let x=2;
+   for(let i=0;i<iters;i++){const xn=x-f(x)/fp(x);
+    linea(px(x),py(f(x)),px(xn),py(0),ACENTO,1.6);
+    linea(px(x),py(0),px(x),py(f(x)),TENUE,1);
+    punto(px(x),py(f(x)),4,ACENTO2);punto(px(xn),py(0),4,ACENTO);x=xn;}
+   punto(px(x),py(0),5,ACENTO);
+   linea(px(SQRT2),py(-2.5),px(SQRT2),py(5),TENUE,1);
+   texto("f(x)=x²−2  ·  x₀=2  ·  √2 ≈ 1,41421356",px(0.4)+4,22,GRIS,"italic 13px Georgia");
+   texto(`${iters} iteración(es)  ·  xₙ = ${x.toFixed(7)}  ·  error = ${Math.abs(x-SQRT2).toExponential(2)}`,px(0.4)+4,h-14,ACENTO,"14px Georgia");
+  }},
+ serie:{
+  slider:[1,12,4,"Cantidad de términos sumados (n)"], h:300,
+  title:"La suma infinita ½ + ¼ + ⅛ + …",
+  intro:"Cada término ocupa la mitad de lo que queda hasta el 1. La suma nunca pasa de 1: se acerca tanto como uno quiera. Ese es el límite, y el cierre del año.",
+  draw(w,h,n){
+   const mx=40,x0=mx,x1=w-mx,y=h*0.45,alto=60,largo=x1-x0;
+   ctx.strokeStyle=GRIS;ctx.lineWidth=1;ctx.strokeRect(x0,y-alto/2,largo,alto);
+   texto("0",x0-4,y+alto/2+20,GRIS,"13px Georgia");texto("1",x1-4,y+alto/2+20,GRIS,"13px Georgia");
+   let s=0,termino=0.5;
+   for(let k=1;k<=n;k++){
+    const xa=x0+s*largo,ancho=termino*largo,color=k%2===1?ACENTO:ACENTO2;
+    ctx.fillStyle=color;ctx.globalAlpha=.78;ctx.fillRect(xa,y-alto/2,ancho,alto);ctx.globalAlpha=1;
+    if(ancho>16)texto("1/"+(1<<k),xa+3,y+4,"#0b1f2a","12px Georgia");
+    s+=termino;termino/=2;
+   }
+   texto(`S_${n} = ${s.toFixed(6)}`,x0,y-alto/2-14,TINTA,"bold 16px Georgia");
+   texto(`Falta para 1: ${(1-s).toFixed(6)}`,x0+230,y-alto/2-14,GRIS,"14px Georgia");
+   texto("La suma nunca pasa de 1: se acerca tanto como uno quiera. Ese es el límite.",x0,y+alto/2+50,ACENTO,"italic 14px Georgia");
+  }},
+};
+
+// ---- arranque ----
+const name=new URLSearchParams(location.search).get('viz')||'epsilon_delta';
+const v=VIZ[name]||VIZ.epsilon_delta;
+const W=cv.width; cv.height=v.h||420; const H=cv.height;
+document.getElementById('ttl').textContent=v.title;
+document.getElementById('intro').textContent=v.intro;
+const s=document.getElementById('s'),lab=document.getElementById('lab');
+const [mn,mx,def,label]=v.slider;
+s.min=mn;s.max=mx;s.value=def;
+function render(){
+ ctx.fillStyle="#0e2733";ctx.fillRect(0,0,W,H);
+ lab.innerHTML=label+': <b>'+s.value+'</b>';
+ v.draw(W,H,+s.value);
+}
+s.oninput=render;render();
+</script></body></html>
